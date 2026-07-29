@@ -1,0 +1,38 @@
+{
+  "Version": "1.0",
+  "ConnectionMode": "Auto",
+  "Ssid": "BIT-Web",
+  "EthernetIpv4Prefixes": [
+    "10."
+  ],
+  "PortalUrl": "http://10.0.0.55/",
+  "ConnectivityCheckUrl": "http://www.msftconnecttest.com/connecttest.txt",
+  "ConnectivityExpectedText": "Microsoft Connect Test",
+  "ConnectivityChecks": [
+    {
+      "Url": "http://www.msftconnecttest.com/connecttest.txt",
+      "ExpectedText": "Microsoft Connect Test"
+    },
+    {
+      "Url": "http://detectportal.firefox.com/success.txt",
+      "ExpectedText": "success"
+    }
+  ],
+  "PollSeconds": 30,
+  "InternetFailureConfirmations": 2,
+  "FailureConfirmationIntervalSeconds": 10,
+  "InitialRetrySeconds": 30,
+  "MaxRetrySeconds": 1800,
+  "AuthenticationCooldownSeconds": 300,
+  "PostLoginWaitSeconds": 5,
+  "PostLoginVerifyAttempts": 4,
+  "PostLoginVerifyIntervalSeconds": 5,
+  "RequestTimeoutSeconds": 8,
+  "LogRetentionDays": 14,
+  "LoginEndpoint": "",
+  "LoginMethod": "POST",
+  "UsernameField": "",
+  "PasswordField": "",
+  "ExtraFields": {},
+  "AllowCrossOriginLoginEndpoint": false
+}
