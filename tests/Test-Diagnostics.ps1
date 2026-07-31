@@ -1,17 +1,28 @@
-# BIT-Web Auto Login v1.0 - read-only diagnostics
+# BIT-Web Auto Login v1.1 - read-only diagnostics
 [CmdletBinding()]
 param(
     [switch]$IncludeInternetCheck,
-    [ValidateRange(1, 500)][int]$LogTail = 30
+    [ValidateRange(1, 500)][int]$LogTail = 30,
+    [string]$RuntimeDirectory
 )
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$settingsPath = Join-Path $projectRoot 'settings.json'
-$modulePath = Join-Path $projectRoot 'BITWebAutoLogin.psm1'
-$credentialPath = Join-Path $projectRoot 'credential.xml'
-$taskName = 'BIT-Web AutoLogin v1.0'
+if ([string]::IsNullOrWhiteSpace($RuntimeDirectory)) {
+    $installedRuntime = Join-Path $env:LOCALAPPDATA 'BITWebAutoLogin'
+    if (Test-Path -LiteralPath (Join-Path $installedRuntime 'AutoLogin.ps1') -PathType Leaf) {
+        $RuntimeDirectory = $installedRuntime
+    }
+    else {
+        $RuntimeDirectory = $projectRoot
+    }
+}
+
+$settingsPath = Join-Path $RuntimeDirectory 'settings.json'
+$modulePath = Join-Path $RuntimeDirectory 'BITWebAutoLogin.psm1'
+$credentialPath = Join-Path $RuntimeDirectory 'credential.xml'
+$taskName = 'BIT-Web AutoLogin'
 
 Import-Module $modulePath -Force
 $settings = Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -21,6 +32,16 @@ $connection = Get-CampusConnectionContext `
     -EthernetIpv4Prefixes @($settings.EthernetIpv4Prefixes)
 
 $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if ($null -eq $task) {
+    foreach ($legacyName in @('BIT-Web AutoLogin v1.1', 'BIT-Web AutoLogin v1.0')) {
+        $legacyTask = Get-ScheduledTask -TaskName $legacyName -ErrorAction SilentlyContinue
+        if ($null -ne $legacyTask) {
+            $taskName = $legacyName
+            $task = $legacyTask
+            break
+        }
+    }
+}
 $taskInfo = $null
 if ($null -ne $task) {
     $taskInfo = Get-ScheduledTaskInfo -TaskName $taskName
@@ -34,8 +55,9 @@ $monitorProcesses = @(
         }
 )
 
-Write-Output '=== BIT-Web Auto Login v1.0 diagnostics ==='
+Write-Output '=== BIT-Web Auto Login diagnostics ==='
 Write-Output ("Time: {0}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'))
+Write-Output ("Runtime directory: {0}" -f $RuntimeDirectory)
 Write-Output ("Settings version: {0}" -f $settings.Version)
 Write-Output ("Connection mode: {0}" -f $settings.ConnectionMode)
 Write-Output ("Eligible connection: {0}" -f $connection.Eligible)
@@ -46,6 +68,7 @@ Write-Output ("Connection reason: {0}" -f $connection.Reason)
 Write-Output ("Credential file exists: {0}" -f (Test-Path -LiteralPath $credentialPath -PathType Leaf))
 Write-Output ("Scheduled task installed: {0}" -f ($null -ne $task))
 if ($null -ne $task) {
+    Write-Output ("Scheduled task name: {0}" -f $taskName)
     Write-Output ("Scheduled task state: {0}" -f $task.State)
     Write-Output ("Scheduled task last run: {0}" -f $taskInfo.LastRunTime)
     Write-Output ("Scheduled task last result: {0}" -f $taskInfo.LastTaskResult)
@@ -65,10 +88,14 @@ else {
     Write-Output 'Internet check: skipped (use -IncludeInternetCheck)'
 }
 
-$latestLog = Get-ChildItem -LiteralPath (Join-Path $projectRoot 'logs') `
-    -File -Filter '*.log' -ErrorAction SilentlyContinue |
-    Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1
+$logDirectory = Join-Path $RuntimeDirectory 'logs'
+$latestLog = $null
+if (Test-Path -LiteralPath $logDirectory -PathType Container) {
+    $latestLog = Get-ChildItem -LiteralPath $logDirectory `
+        -File -Filter '*.log' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
 
 if ($null -eq $latestLog) {
     Write-Output 'Latest log: none'

@@ -1,0 +1,42 @@
+name: PowerShell tests
+
+on:
+  push:
+    branches:
+      - main
+      - agent/**
+  pull_request:
+
+jobs:
+  offline-tests:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Parse PowerShell sources
+        shell: powershell
+        run: |
+          $failed = $false
+          $files = Get-ChildItem -Recurse -File -Include *.ps1,*.psm1
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $file.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "FAIL $($file.FullName)"
+              $errors | ForEach-Object { Write-Host $_.Message }
+            }
+          }
+          if ($failed) {
+            exit 1
+          }
+
+      - name: Run offline tests
+        shell: powershell
+        run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Offline.Tests.ps1

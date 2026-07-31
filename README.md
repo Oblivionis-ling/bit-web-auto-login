@@ -1,132 +1,196 @@
-# BIT-Web 自动登录 v1.0
+# BIT-Web 自动登录 v1.1
 
-这是一个面向 Windows 的校园网 Web 认证脚本。它支持校园网有线连接和 `BIT-Web` Wi‑Fi；在符合安全条件的连接上检测到公网不可用时，尝试登录 `http://10.0.0.55/`。
+Windows 校园网后台认证工具，支持：
 
-准备启用长期运行前，请按 [全面测试流程-v1.0.md](./全面测试流程-v1.0.md) 完成验收。
+- `BIT-Web` Wi-Fi。
+- 符合允许 IPv4 前缀的物理有线网卡，默认是校园网 `10.*`。
+- 深澜（Srun）challenge、HMAC-MD5、SHA-1、SRBX1 登录流程。
+- 普通 HTML 登录表单兼容路径。
+- Windows 登录后自动启动、断网检测、自动认证和持续重试。
 
-## v1.0 的安全边界
+脚本不会创建、切换、启用、禁用或修改网卡配置。Windows 负责连接已有网络，脚本只处理网页认证。
 
-- 不创建、删除或修改任何有线或 Wi‑Fi 配置。
-- 不调用网卡连接、断开、启用或禁用命令，不会主动切换当前网络。
-- Windows 负责按已有配置自动连回 `BIT-Web`，脚本只处理网页认证。
-- 有线模式只接受活动的物理以太网网卡，并要求 IPv4 地址匹配配置的安全前缀，默认是校园网使用的 `10.*`。
-- 默认运行 `AutoLogin.ps1` 是安全预览模式，不访问网络、不读取凭据。
-- 只有显式添加 `-Live` 才会进行公网检测和校园网认证。
-- 自动启动安装器默认也只预览，只有显式添加 `-Apply` 才会创建任务计划。
-- 登录接口只能与入口网址同源，防止账号密码被意外发送到其他服务器。
-- 使用 Microsoft 与 Firefox 两个独立公网探测地址，任一成功即视为在线。
-- 只有连续两轮探测都失败才提交认证；认证接口接受后进入 5 分钟冷却。
-- 登录后会多次验证公网恢复，避免瞬时探测失败造成重复登录。
+## v1.1 运行策略
 
-本版本已识别学校使用的深澜（Srun）JavaScript 认证流程，支持 challenge、HMAC‑MD5、SHA‑1 和 SRBX1 参数计算；同时保留普通 HTML 表单兼容路径。
+- 每 30 秒检查一次符合条件的校园网连接。
+- 使用 Microsoft 和 Firefox 两个独立公网探测地址，任一成功即视为在线。
+- 连续两轮探测都失败才提交认证，避免瞬时网络波动造成误登录。
+- 认证接口接受后进入 5 分钟冷却，冷却期内不会重复提交。
+- 登录后最多进行 4 次公网恢复验证。
+- 认证请求发生错误时，从 30 秒开始指数退避，最长 30 分钟；达到上限后仍每 30 分钟持续尝试，不会自动放弃。
+- 日志只记录状态和错误，不记录账号、密码、请求正文或完整响应正文。
 
-## 文件说明
+## 系统要求
 
-- `AutoLogin.ps1`：主监控脚本，版本 v1.0。
-- `BITWebAutoLogin.psm1`：HTML 表单识别、请求构造、联网检测和重试逻辑。
-- `settings.json`：非敏感配置，不含账号密码。
-- `Setup-Credential.ps1`：由用户手动创建 DPAPI 加密凭据。
-- `Install-AutoStart.ps1`：由用户手动安装“登录 Windows 后启动”的任务计划。
-- `Uninstall-AutoStart.ps1`：由用户手动卸载任务计划。
-- `tests/Offline.Tests.ps1`：完全离线的逻辑测试。
+- Windows 10 或 Windows 11。
+- Windows PowerShell 5.1。
+- 已由 Windows 保存并能连接校园网有线网络或 `BIT-Web`。
+- 当前 Windows 用户可以使用“任务计划程序”；通常不需要管理员权限。
 
-## 回来后的推荐测试顺序
+## 一键部署
 
-先打开 PowerShell 并进入本文件夹。以下每一步都需要你亲自执行。
+### 1. 获取项目
 
-### 1. 安全预览
+仓库目前是私有仓库。已安装 GitHub CLI 时可执行：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\AutoLogin.ps1
+gh repo clone Oblivionis-ling/bit-web-auto-login
+cd bit-web-auto-login
 ```
 
-该命令不会发出网络请求，也不会读取账号密码。
+也可以在 GitHub 网页中选择 **Code → Download ZIP**，解压后进入项目目录。
 
-默认连接模式为 `Auto`。可以在命令行临时指定：
+### 2. 运行一键安装
+
+下载 ZIP 的用户可以直接双击：
+
+```text
+Install.cmd
+```
+
+也可以在 PowerShell 中运行：
 
 ```powershell
-# 有线或 BIT-Web Wi-Fi 均可
-.\AutoLogin.ps1 -ConnectionMode Auto
-
-# 只允许 BIT-Web Wi-Fi
-.\AutoLogin.ps1 -ConnectionMode Wifi
-
-# 只允许符合安全前缀的物理有线网卡
-.\AutoLogin.ps1 -ConnectionMode Ethernet
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 ```
 
-也可以修改 `settings.json` 中的 `ConnectionMode`，可选值为 `Auto`、`Wifi`、`Ethernet`。`EthernetIpv4Prefixes` 默认为 `["10."]`。
+第一次安装会弹出 Windows 凭据输入框。请在本地输入校园网账号密码，不要把密码写入命令、配置文件或聊天。
 
-### 2. 保存加密凭据
+安装器会自动完成：
+
+1. 校验 v1.1 运行文件。
+2. 复制运行文件到 `%LOCALAPPDATA%\BITWebAutoLogin`。
+3. 创建或保留 `credential.xml`。密码由当前 Windows 用户的 DPAPI 加密。
+4. 将旧版 `BIT-Web AutoLogin v1.0` 任务迁移到稳定任务名 `BIT-Web AutoLogin`。
+5. 注册“当前用户登录 Windows 后启动”的后台任务。
+6. 立即启动任务并验证其进入 `Running` 状态。
+
+安装器不会复制仓库中的测试、文档、历史日志或临时文件到运行目录。
+
+### 3. 验证部署
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Credential.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-Diagnostics.ps1 -IncludeInternetCheck -LogTail 50
 ```
 
-密码由 Windows DPAPI 加密，只能由当前 Windows 用户在当前电脑上解密；账号会显示在 `credential.xml` 中。请不要把该文件发给他人。
+正常结果应包括：
 
-### 3. 在场进行一次真实测试
+```text
+Settings version: 1.1
+Eligible connection: True
+Scheduled task installed: True
+Scheduled task name: BIT-Web AutoLogin
+Scheduled task state: Running
+Live monitor process count: 1
+Internet check: True
+```
 
-确认电脑已经连到 `BIT-Web`，然后运行：
+任务计划结果 `267009`（十六进制 `0x41301`）表示任务正在运行，不是错误。
+
+## 安装预览
+
+只查看安装计划，不复制文件、不提示凭据、不修改任务：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\AutoLogin.ps1 -Live -Once
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1 -WhatIf
 ```
 
-退出码含义：
+## 更新已有安装
 
-- `0`：公网原本正常，或认证后已恢复。
-- `2`：当前没有符合所选模式的连接，脚本没有发送认证信息。
-- `3`：认证失败，查看 `logs` 下当天的日志。
-
-日志不会主动记录账号、密码、表单内容或完整响应正文。
-
-### 4. 预览并安装自动启动
-
-先预览，不修改系统：
+拉取新版本后重新运行同一个安装脚本：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AutoStart.ps1
+git pull
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 ```
 
-确认单次真实测试成功后，再由你安装：
+默认会保留 `%LOCALAPPDATA%\BITWebAutoLogin\credential.xml`，无需重复输入密码。
+
+需要更换账号密码时：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-AutoStart.ps1 -Apply
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1 -RefreshCredential
 ```
 
-该任务会在当前用户登录 Windows 时启动常驻监控。监控每 30 秒检查一次；认证请求本身失败后从 30 秒开始指数退避，最长等待 30 分钟，达到上限后仍会每 30 分钟持续尝试。默认 `Auto` 模式会接受符合安全条件的校园网有线连接或 `BIT-Web` Wi‑Fi。Wi‑Fi 完全断开时只等待 Windows 自动重连。
-
-### 5. 卸载自动启动
+## 卸载后台任务
 
 预览：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-AutoStart.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1 -WhatIf
 ```
 
 实际卸载：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall-AutoStart.ps1 -Apply
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ```
 
-卸载只删除任务计划，不会删除凭据、脚本或日志。
+卸载脚本只停止并删除任务计划，保留安装目录、设置、日志和加密凭据，方便以后恢复。需要彻底清理时，请先卸载任务，再由当前用户手动删除：
 
-## 登录页兼容性
+```text
+%LOCALAPPDATA%\BITWebAutoLogin
+```
 
-默认情况下，脚本先读取入口页。检测到深澜（Srun）页面时，会按照页面自身使用的 challenge、HMAC‑MD5、SHA‑1 和 SRBX1 流程调用同源认证接口；否则寻找普通 HTML `<form>`，保留隐藏字段和提交按钮字段，再向同源 `action` 地址提交。
+删除该目录会同时删除本机加密凭据和运行日志，请确认不再需要后再操作。
 
-如果日志显示无法识别表单，需要根据浏览器开发者工具中正常登录请求填写 `settings.json`：
+## 配置
 
-- `LoginEndpoint`：登录接口相对路径或同源完整地址。
-- `LoginMethod`：`GET` 或 `POST`，通常是 `POST`。
-- `UsernameField`：账号参数名。
-- `PasswordField`：密码参数名。
-- `ExtraFields`：运营商、登录动作等固定参数。
+非敏感配置位于 `settings.json`，安装时复制到运行目录。
 
-不要把账号或密码直接写入 `settings.json`。跨源登录默认被拒绝；不建议开启 `AllowCrossOriginLoginEndpoint`。
+主要选项：
 
-## 已知安全提示
+- `ConnectionMode`：`Auto`、`Wifi` 或 `Ethernet`。
+- `Ssid`：允许认证的 Wi-Fi 名称，默认 `BIT-Web`。
+- `EthernetIpv4Prefixes`：允许认证的物理有线 IPv4 前缀，默认 `["10."]`。
+- `PortalUrl`：校园网入口，默认 `http://10.0.0.55/`。
+- `PollSeconds`：正常监控间隔，默认 30 秒。
+- `AuthenticationCooldownSeconds`：认证后的防重复冷却，默认 300 秒。
+- `MaxRetrySeconds`：认证错误的最大退避间隔，默认 1800 秒。
 
-入口地址目前配置为 HTTP。如果网页登录本身也是 HTTP，账号密码可能以未加密形式在校园网内传输。脚本无法修复服务端未提供 HTTPS 的问题，只会复现正常网页登录流程。
+不要把账号或密码写入 `settings.json`。
+
+## 项目结构
+
+```text
+.
+├── Install.ps1                 # 一键安装/升级
+├── Install.cmd                 # Windows 双击安装入口
+├── Uninstall.ps1               # 安全卸载任务
+├── AutoLogin.ps1               # 后台监控入口
+├── BITWebAutoLogin.psm1        # 网络判断与认证实现
+├── settings.json               # 非敏感配置
+├── scripts/
+│   └── Setup-Credential.ps1    # 高级用户单独更新凭据
+├── tests/
+│   ├── Offline.Tests.ps1       # 完全离线的逻辑测试
+│   └── Test-Diagnostics.ps1    # 只读运行诊断
+└── docs/
+    └── 全面测试流程-v1.1.md
+```
+
+测试脚本全部位于独立的 `tests/` 目录，不会被一键安装器复制到正式运行目录。
+
+## 开发与测试
+
+安全预览：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\AutoLogin.ps1
+```
+
+离线回归测试：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Offline.Tests.ps1
+```
+
+完整人工验收参考 [docs/全面测试流程-v1.1.md](docs/全面测试流程-v1.1.md)。
+
+## 安全说明
+
+- `credential.xml` 和 `logs/` 已加入 `.gitignore`，不得提交到 GitHub。
+- DPAPI 凭据只能由创建它的 Windows 用户在同一台电脑上解密。
+- 登录接口目前使用 HTTP。账号密码可能以校园网既有协议要求的形式在局域网中传输；客户端脚本无法替服务端增加 HTTPS。
+- 默认拒绝把凭据发送到与入口不同源的服务器。
+- 如果电脑可能连接其他使用 `10.*` 地址的物理有线网络，建议收窄 `EthernetIpv4Prefixes`，或将 `ConnectionMode` 设置为 `Wifi`。
