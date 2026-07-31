@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.0
+# BIT-Web Auto Login v1.1
 [CmdletBinding()]
 param(
     [switch]$Live,
@@ -11,7 +11,7 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-$ScriptVersion = '1.0'
+$ScriptVersion = '1.1'
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
     $ConfigPath = Join-Path $PSScriptRoot 'settings.json'
 }
@@ -137,7 +137,7 @@ function Get-LoginCredential {
         return $script:CredentialCache
     }
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        throw "Encrypted credential file not found. Run Setup-Credential.ps1 first: $Path"
+        throw "Encrypted credential file not found. Rerun Install.ps1 -RefreshCredential from the downloaded project: $Path"
     }
     $value = Import-Clixml -LiteralPath $Path
     if ($value -isnot [pscredential]) {

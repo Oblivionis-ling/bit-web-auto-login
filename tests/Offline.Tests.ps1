@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.0 - offline-only tests
+# BIT-Web Auto Login v1.1 - offline-only tests
 [CmdletBinding()]
 param()
 
@@ -250,11 +250,44 @@ Test-Case 'safe preview path is explicitly gated before credential loading' {
 
 Test-Case 'settings enable redundant probes and anti-loop safeguards' {
     $settings = Get-Content -LiteralPath (Join-Path $projectRoot 'settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    Assert-Equal ([string]$settings.Version) '1.1' 'settings version'
+    $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'AutoLogin.ps1') -Raw -Encoding UTF8
+    Assert-True ($mainSource -match '\$ScriptVersion = ''1\.1''') 'main script version'
     Assert-True (@($settings.ConnectivityChecks).Count -ge 2) 'redundant connectivity checks'
     Assert-True ([int]$settings.InternetFailureConfirmations -ge 2) 'consecutive failure confirmation'
     Assert-True ([int]$settings.AuthenticationCooldownSeconds -ge 300) 'authentication cooldown'
     Assert-True ([int]$settings.PostLoginVerifyAttempts -ge 2) 'post-login verification retries'
     Assert-Equal ([int]$settings.MaxRetrySeconds) 1800 'maximum retry delay'
+}
+
+Test-Case 'one-click installer uses a stable per-user deployment' {
+    $source = Get-Content -LiteralPath (Join-Path $projectRoot 'Install.ps1') -Raw -Encoding UTF8
+    Assert-True ($source -match '\$version = ''1\.1''') 'installer version'
+    Assert-True ($source -match '\$taskName = ''BIT-Web AutoLogin''') 'stable task name'
+    Assert-True ($source -match "LOCALAPPDATA.*BITWebAutoLogin") 'per-user install directory'
+    Assert-True ($source -match 'MultipleInstances IgnoreNew') 'duplicate process protection'
+    Assert-True (-not ($source -match '(?i)netsh(?:\.exe)?\s+wlan\s+(?:connect|add|delete|set)')) 'installer does not mutate Wi-Fi'
+    Assert-True (Test-Path -LiteralPath (Join-Path $projectRoot 'Install.cmd') -PathType Leaf) 'double-click installer exists'
+}
+
+Test-Case 'one-click installer WhatIf makes no deployment changes' {
+    $previewTarget = Join-Path $projectRoot ('_tmp\install-preview-' + [guid]::NewGuid().ToString('N'))
+    $output = & powershell.exe `
+        -NoProfile `
+        -ExecutionPolicy Bypass `
+        -File (Join-Path $projectRoot 'Install.ps1') `
+        -InstallDirectory $previewTarget `
+        -WhatIf 2>&1
+    Assert-Equal $LASTEXITCODE 0 'installer WhatIf exit code'
+    Assert-True (-not (Test-Path -LiteralPath $previewTarget)) 'installer WhatIf target absence'
+    Assert-True (([string]($output -join "`n")) -match 'What if') 'installer WhatIf output'
+}
+
+Test-Case 'test scripts are isolated under tests' {
+    $rootTestScripts = @(Get-ChildItem -LiteralPath $projectRoot -File -Filter '*.Tests.ps1')
+    $testDirectoryScripts = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter '*.ps1')
+    Assert-Equal $rootTestScripts.Count 0 'root test script count'
+    Assert-True ($testDirectoryScripts.Count -ge 2) 'tests directory script count'
 }
 
 Write-Host ("Offline test summary: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
