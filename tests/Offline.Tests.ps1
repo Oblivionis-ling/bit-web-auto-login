@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.1 - offline-only tests
+# BIT-Web Auto Login v1.2 - offline-only tests
 [CmdletBinding()]
 param()
 
@@ -250,9 +250,9 @@ Test-Case 'safe preview path is explicitly gated before credential loading' {
 
 Test-Case 'settings enable redundant probes and anti-loop safeguards' {
     $settings = Get-Content -LiteralPath (Join-Path $projectRoot 'settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    Assert-Equal ([string]$settings.Version) '1.1' 'settings version'
+    Assert-Equal ([string]$settings.Version) '1.2' 'settings version'
     $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'AutoLogin.ps1') -Raw -Encoding UTF8
-    Assert-True ($mainSource -match '\$ScriptVersion = ''1\.1''') 'main script version'
+    Assert-True ($mainSource -match '\$ScriptVersion = ''1\.2''') 'main script version'
     Assert-True (@($settings.ConnectivityChecks).Count -ge 2) 'redundant connectivity checks'
     Assert-True ([int]$settings.InternetFailureConfirmations -ge 2) 'consecutive failure confirmation'
     Assert-True ([int]$settings.AuthenticationCooldownSeconds -ge 300) 'authentication cooldown'
@@ -262,10 +262,12 @@ Test-Case 'settings enable redundant probes and anti-loop safeguards' {
 
 Test-Case 'one-click installer uses a stable per-user deployment' {
     $source = Get-Content -LiteralPath (Join-Path $projectRoot 'Install.ps1') -Raw -Encoding UTF8
-    Assert-True ($source -match '\$version = ''1\.1''') 'installer version'
+    Assert-True ($source -match '\$version = ''1\.2''') 'installer version'
     Assert-True ($source -match '\$taskName = ''BIT-Web AutoLogin''') 'stable task name'
     Assert-True ($source -match "LOCALAPPDATA.*BITWebAutoLogin") 'per-user install directory'
     Assert-True ($source -match 'MultipleInstances IgnoreNew') 'duplicate process protection'
+    Assert-True ($source -match 'RunHidden\.vbs') 'hidden launcher deployment'
+    Assert-True ($source -match 'wscript\.exe') 'windowless task launcher'
     Assert-True (-not ($source -match '(?i)netsh(?:\.exe)?\s+wlan\s+(?:connect|add|delete|set)')) 'installer does not mutate Wi-Fi'
     Assert-True (Test-Path -LiteralPath (Join-Path $projectRoot 'Install.cmd') -PathType Leaf) 'double-click installer exists'
 }

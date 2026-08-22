@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.1 - advanced DPAPI credential setup
+# BIT-Web Auto Login v1.2 - advanced DPAPI credential setup
 [CmdletBinding()]
 param(
     [string]$CredentialPath

@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.1 - safe task uninstaller
+# BIT-Web Auto Login v1.2 - safe task uninstaller
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param()
 

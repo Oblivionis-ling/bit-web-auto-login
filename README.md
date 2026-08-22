@@ -10,7 +10,7 @@
 
 <br><br>
 
-[![Version](https://img.shields.io/badge/version-v1.1-2563eb?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v1.2-2563eb?style=flat-square)](CHANGELOG.md)
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078d4?style=flat-square&logo=windows11&logoColor=white)](#系统要求)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391fe?style=flat-square&logo=powershell&logoColor=white)](#系统要求)
 [![PowerShell tests](https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml/badge.svg)](https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml)
@@ -66,11 +66,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install.ps1
 
 首次安装会弹出 Windows 凭据输入框。安装器会：
 
-1. 校验 v1.1 的运行文件和配置版本。
+1. 校验 v1.2 的运行文件和配置版本。
 2. 将 `AutoLogin.ps1`、`BITWebAutoLogin.psm1`、`settings.json` 复制到 `%LOCALAPPDATA%\BITWebAutoLogin`。
 3. 创建或复用 `credential.xml`；密码由当前 Windows 用户的 DPAPI 加密。
 4. 注册当前用户登录时启动的 `BIT-Web AutoLogin` 任务，并防止重复实例。
-5. 默认立即启动任务、确认其进入 `Running` 状态，并移除旧版任务。
+5. 通过无窗口启动器启动监控，避免 Windows 11 登录时弹出 PowerShell 控制台；默认立即启动任务、确认其进入 `Running` 状态，并移除旧版任务。
 
 安装过程不会复制测试、文档、仓库日志或临时文件到正式运行目录。
 
@@ -83,7 +83,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Test-Diagnostics
 正常安装且当前位于符合条件的校园网时，关键结果应类似：
 
 ```text
-Settings version: 1.1
+Settings version: 1.2
 Eligible connection: True
 Scheduled task installed: True
 Scheduled task name: BIT-Web AutoLogin
@@ -96,7 +96,7 @@ Internet check: True
 
 ## 工作方式
 
-| 阶段 | v1.1 的实际行为 |
+| 阶段 | v1.2 的实际行为 |
 |---|---|
 | 连接筛选 | `Wifi` 仅接受精确 SSID；`Ethernet` 仅接受活动物理有线网卡及允许的 IPv4 前缀；`Auto` 依次尝试两者 |
 | 公网探测 | 默认每 30 秒检查两个地址，任意一个返回预期文本即视为在线 |
@@ -254,6 +254,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ├── Install.ps1                      # 当前用户安装与升级
 ├── Uninstall.ps1                    # 停止并移除任务
 ├── AutoLogin.ps1                    # 监控循环与状态日志
+├── RunHidden.vbs                    # 任务计划的无窗口启动器
 ├── BITWebAutoLogin.psm1             # 连接判断、表单与 Srun 认证实现
 ├── settings.json                    # 非敏感运行配置
 ├── scripts/
@@ -285,6 +286,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Offline.Tests.ps
 
 <div align="center">
 
-<sub>BIT-Web Auto Login v1.1 · Windows 当前用户后台任务</sub>
+<sub>BIT-Web Auto Login v1.2 · Windows 当前用户后台任务</sub>
 
 </div>

@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.1 - one-click per-user installer and upgrader
+# BIT-Web Auto Login v1.2 - one-click per-user installer and upgrader
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [string]$InstallDirectory,
@@ -8,7 +8,7 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-$version = '1.1'
+$version = '1.2'
 $taskName = 'BIT-Web AutoLogin'
 $legacyTaskNames = @('BIT-Web AutoLogin v1.0', 'BIT-Web AutoLogin v1.1')
 $sourceDirectory = $PSScriptRoot
@@ -24,6 +24,7 @@ if ($env:OS -ne 'Windows_NT') {
 $requiredSourceFiles = @(
     'AutoLogin.ps1',
     'BITWebAutoLogin.psm1',
+    'RunHidden.vbs',
     'settings.json'
 )
 foreach ($name in $requiredSourceFiles) {
@@ -97,10 +98,11 @@ if ($credentialCheck -isnot [pscredential]) {
 }
 $credentialCheck = $null
 
-$powerShellExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-$arguments = '-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}" -Live' -f $mainScriptTarget
+$launcherTarget = Join-Path $InstallDirectory 'RunHidden.vbs'
+$wscriptExe = Join-Path $env:SystemRoot 'System32\wscript.exe'
+$arguments = '"{0}"' -f $launcherTarget
 $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
-$action = New-ScheduledTaskAction -Execute $powerShellExe -Argument $arguments -WorkingDirectory $InstallDirectory
+$action = New-ScheduledTaskAction -Execute $wscriptExe -Argument $arguments -WorkingDirectory $InstallDirectory
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $identity
 $principal = New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
 $taskSettings = New-ScheduledTaskSettingsSet `
@@ -141,10 +143,23 @@ try {
 
     if (-not $NoStart) {
         Start-ScheduledTask -TaskName $taskName
-        Start-Sleep -Seconds 3
         $installedTask = Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
-        if ($installedTask.State -ne 'Running') {
-            throw "The installed task did not enter Running state: $($installedTask.State)"
+        if ($null -eq $installedTask) {
+            throw "The installed task could not be found after registration."
+        }
+
+        $monitorProcess = $null
+        for ($attempt = 1; $attempt -le 10; $attempt++) {
+            Start-Sleep -Seconds 1
+            $monitorProcess = Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+                Where-Object { $_.CommandLine -match '(?i)(^|[\\\" ])AutoLogin\.ps1([\\\" ]|$)' -and $_.CommandLine -match '(?i)(^|[\\\" ])-Live([\\\" ]|$)' } |
+                Select-Object -First 1
+            if ($null -ne $monitorProcess) {
+                break
+            }
+        }
+        if ($null -eq $monitorProcess) {
+            throw "The installed task was registered but no live AutoLogin.ps1 monitor process was detected. Task state: $($installedTask.State)"
         }
     }
 
