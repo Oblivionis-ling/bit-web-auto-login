@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="300" viewBox="0 0 1200 300"
+     role="img" aria-labelledby="title desc">
+  <title id="title">BIT-Web Auto Login</title>
+  <desc id="desc">为北京理工大学校园网用户设计的 Windows 后台认证工具：已接入校园网、发现认证失效、恢复公网三个状态沿同一基线排列。</desc>
+
+  <rect width="1200" height="300" rx="4" fill="#F4F0E7"/>
+  <path d="M 48 28 H 1152" stroke="#C9CBC8"/>
+  <path d="M 48 28 H 112" stroke="#762F3D" stroke-width="3"/>
+  <path d="M 48 272 H 1152" stroke="#C9CBC8"/>
+  <path d="M 630 54 V 246" stroke="#C9CBC8"/>
+
+  <g id="title-block">
+    <text x="64" y="72"
+          fill="#6F7475"
+          font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+          font-size="18" font-weight="600" letter-spacing="2">BEIJING INSTITUTE OF TECHNOLOGY</text>
+
+    <text x="64" y="144"
+          fill="#243746"
+          font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+          font-size="62" font-weight="700" letter-spacing="-1">BIT-WEB</text>
+    <text x="64" y="188"
+          fill="#252626"
+          font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+          font-size="34" font-weight="600" letter-spacing="1">AUTO LOGIN</text>
+
+    <text x="64" y="234"
+          fill="#252626"
+          font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+          font-size="27" font-weight="600">认证失效后，自动恢复公网。</text>
+  </g>
+
+  <g id="network-state">
+    <rect x="670" y="54" width="466" height="174" rx="4" fill="#DCE6E8"/>
+
+    <text x="694" y="86"
+          fill="#6F7475"
+          font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+          font-size="18" font-weight="600" letter-spacing="1">NETWORK RECOVERY</text>
+
+    <path d="M 744 130 H 1062" stroke="#C9CBC8" stroke-width="2"/>
+    <path d="M 903 130 H 1062" stroke="#243746" stroke-width="2"/>
+
+    <g id="state-connected">
+      <rect x="739" y="125" width="10" height="10" rx="2" fill="#243746"/>
+      <text x="744" y="172"
+            text-anchor="middle"
+            fill="#252626"
+            font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+            font-size="20" font-weight="600">已接入校园网</text>
+      <text x="744" y="201"
+            text-anchor="middle"
+            fill="#6F7475"
+            font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+            font-size="18">BIT-Web / 有线</text>
+    </g>
+
+    <g id="state-expired">
+      <path d="M 903 122 L 911 130 L 903 138 L 895 130 Z" fill="#762F3D"/>
+      <text x="903" y="172"
+            text-anchor="middle"
+            fill="#762F3D"
+            font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+            font-size="20" font-weight="600">认证失效</text>
+      <text x="903" y="201"
+            text-anchor="middle"
+            fill="#6F7475"
+            font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+            font-size="18">DETECTED</text>
+    </g>
+
+    <g id="state-online">
+      <rect x="1057" y="125" width="10" height="10" rx="2" fill="#243746"/>
+      <text x="1062" y="172"
+            text-anchor="middle"
+            fill="#243746"
+            font-family="-apple-system, BlinkMacSystemFont, Segoe UI, PingFang SC, sans-serif"
+            font-size="20" font-weight="700">公网恢复</text>
+      <text x="1062" y="201"
+            text-anchor="middle"
+            fill="#6F7475"
+            font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+            font-size="18">ONLINE</text>
+    </g>
+  </g>
+
+  <g id="metadata">
+    <text x="670" y="254"
+          fill="#6F7475"
+          font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+          font-size="16">WINDOWS 10 / 11</text>
+    <path d="M 834 238 V 258" stroke="#C9CBC8"/>
+    <text x="854" y="254"
+          fill="#6F7475"
+          font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+          font-size="16">POWERSHELL 5.1</text>
+    <path d="M 1032 238 V 258" stroke="#C9CBC8"/>
+    <text x="1052" y="254"
+          fill="#243746"
+          font-family="ui-monospace, SFMono-Regular, Consolas, monospace"
+          font-size="16" font-weight="700">v1.2</text>
+  </g>
+</svg>
