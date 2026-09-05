@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.2 - read-only diagnostics
+# BIT-Web Auto Login v1.2.5 - read-only diagnostics
 [CmdletBinding()]
 param(
     [switch]$IncludeInternetCheck,

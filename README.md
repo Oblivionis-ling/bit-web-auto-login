@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img alt="当前版本 v1.2" src="https://img.shields.io/badge/version-v1.2-243746?style=flat-square"></a>
+  <a href="CHANGELOG.md"><img alt="当前版本 v1.2.5" src="https://img.shields.io/badge/version-v1.2.5-243746?style=flat-square"></a>
   <a href="#系统要求"><img alt="支持 Windows 10 和 Windows 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-243746?style=flat-square&logo=windows11&logoColor=white"></a>
   <a href="https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml"><img alt="PowerShell 离线测试状态" src="https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml/badge.svg"></a>
 </p>
@@ -49,17 +49,28 @@ cd bit-web-auto-login
 
 也可以在 GitHub 页面选择 **Code → Download ZIP**，下载并解压。
 
-### 2. 安装
+### 2. 打开图形管理器并安装
 
-进入项目目录，双击 <code>Install.cmd</code>。
+进入项目目录，双击 <code>Open-GUI.cmd</code>，然后选择 **安装自动登录**。
 
 首次安装会弹出 Windows 凭据输入框。输入校园网账号和密码后，程序会在后台运行，并在以后登录 Windows 时自动启动。
 
+图形管理器同时提供安装、GitHub 更新、更换账号、卸载和清除账号信息。它不会读取或显示密码。
+
+点击 **检查并更新** 时，管理器会连接固定的官方仓库 `Oblivionis-ling/bit-web-auto-login`。有稳定 Release 时优先下载 Release；尚无 Release 时下载 `main` 最新提交。下载后会检查必要文件和 PowerShell 语法，再复用安装器部署，不要求电脑安装 Git。程序不会在后台自动检查更新。
+
+安装后，管理器也会出现在当前用户的 Windows 开始菜单中。它仅在需要维护时打开，关闭窗口后立即退出，不会驻留托盘或随 Windows 启动。自动登录后台任务与管理器彼此独立。
+
+![BIT-Web 自动登录 Dashboard](assets/readme/gui-v2-dashboard.png)
+
+如需使用原有命令行入口，仍可双击 <code>Install.cmd</code>。
+
 ## 更新、换号与卸载
 
-- **更新版本**：下载最新代码后，再次双击 <code>Install.cmd</code>。原有加密凭据会继续保留。
+- **更新版本**：在图形管理器中点击 **检查并更新**。管理器会从官方 GitHub 仓库下载、校验并部署最新版本，原有加密凭据会继续保留。
 - **更换账号或密码**：重新运行安装器并使用 <code>-RefreshCredential</code>。
 - **卸载后台任务**：运行 <code>Uninstall.ps1</code>。脚本默认保留设置、日志和加密凭据。
+- **清除账号信息**：在图形管理器中选择 **清除账号信息**。该操作会先停用自动登录，再仅删除本机 DPAPI 凭据；日志和设置仍保留。
 
 <details>
 <summary><strong>需要维护命令时再展开</strong></summary>
@@ -79,6 +90,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 - 用户名在凭据文件中可见；密码由 Windows DPAPI 保护，只能由创建它的 Windows 用户在同一台电脑上解密。
 - 程序不会创建、切换、启用、禁用或修改网络连接。
 - 默认认证入口使用 HTTP，这是北理工校园网服务端的既有条件；脚本无法替服务端增加 HTTPS。
+- 在线更新只在点击 **检查并更新** 后访问固定的 GitHub HTTPS API；不会上传账号、密码、日志或设置。
 - 校园网有线默认识别 <code>10.*</code> 地址。若电脑可能接入其他同地址段网络，建议只使用 <code>Wifi</code> 模式。
 
 ## 项目结构
@@ -89,6 +101,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ~~~text
 .
 ├── Install.cmd                      # 可双击的一键安装入口
+├── Open-GUI.cmd                     # 可双击的图形管理入口
+├── Open-GUI.vbs                     # 无控制台窗口启动器
+├── Manage.ps1                       # WinForms 图形管理器
+├── BITWebAutoLogin.Management.psm1  # GUI 管理操作层
 ├── Install.ps1                      # 当前用户安装与升级
 ├── Uninstall.ps1                    # 停止并移除任务
 ├── AutoLogin.ps1                    # 监控循环与状态日志
@@ -116,7 +132,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 
 当前项目保留了以下测试与验收内容：
 
-- **22 项完全离线的回归测试**：覆盖登录表单解析、同源保护、Srun 编码向量、Wi-Fi 与有线连接筛选、断网决策、冷却与重试、安装预览，以及“不得修改网卡”等安全边界。
+- **26 项完全离线的回归测试**：覆盖登录表单解析、同源保护、Srun 编码向量、Wi-Fi 与有线连接筛选、断网决策、冷却与重试、安装预览、Dashboard 状态映射、GUI 管理边界，以及“不得修改网卡”等安全边界。
 - **PowerShell 源码解析与 Windows CI**：每次推送或 Pull Request 都会检查脚本语法，并运行同一套离线测试。
 - **只读运行诊断**：检查连接资格、计划任务、后台进程和日志，不修改网络设置。
 - **真实环境人工验收**：覆盖断网恢复、错误网络保护、睡眠唤醒、重启和长期运行。
@@ -126,5 +142,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ---
 
 <p align="center">
-  <sub>BIT-Web Auto Login v1.2 · 北京理工大学校园网 · Windows 当前用户后台任务</sub>
+  <sub>BIT-Web Auto Login v1.2.5 · 北京理工大学校园网 · Windows 当前用户后台任务</sub>
 </p>

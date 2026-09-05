@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.2
+# BIT-Web Auto Login v1.2.5
 [CmdletBinding()]
 param(
     [switch]$Live,
@@ -11,7 +11,7 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-$ScriptVersion = '1.2'
+$ScriptVersion = '1.2.5'
 if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
     $ConfigPath = Join-Path $PSScriptRoot 'settings.json'
 }

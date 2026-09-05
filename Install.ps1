@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.2 - one-click per-user installer and upgrader
+﻿# BIT-Web Auto Login v1.2.5 - one-click per-user installer and upgrader
 [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
 param(
     [string]$InstallDirectory,
@@ -8,7 +8,7 @@ param(
 
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
-$version = '1.2'
+$version = '1.2.5'
 $taskName = 'BIT-Web AutoLogin'
 $legacyTaskNames = @('BIT-Web AutoLogin v1.0', 'BIT-Web AutoLogin v1.1')
 $sourceDirectory = $PSScriptRoot
@@ -25,7 +25,13 @@ $requiredSourceFiles = @(
     'AutoLogin.ps1',
     'BITWebAutoLogin.psm1',
     'RunHidden.vbs',
-    'settings.json'
+    'settings.json',
+    'Install.ps1',
+    'Uninstall.ps1',
+    'BITWebAutoLogin.Management.psm1',
+    'Manage.ps1',
+    'Open-GUI.cmd',
+    'Open-GUI.vbs'
 )
 foreach ($name in $requiredSourceFiles) {
     $path = Join-Path $sourceDirectory $name
@@ -66,6 +72,18 @@ foreach ($name in $requiredSourceFiles) {
         Copy-Item -LiteralPath $source -Destination $target -Force
     }
 }
+
+$programsDirectory = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
+$shortcutPath = Join-Path $programsDirectory 'BIT-Web 自动登录管理器.lnk'
+$shortcutTarget = Join-Path $env:SystemRoot 'System32\wscript.exe'
+$shortcutArguments = '"{0}"' -f (Join-Path $InstallDirectory 'Open-GUI.vbs')
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $shortcutTarget
+$shortcut.Arguments = $shortcutArguments
+$shortcut.WorkingDirectory = $InstallDirectory
+$shortcut.Description = '按需打开 BIT-Web 自动登录管理器'
+$shortcut.Save()
 
 if ($RefreshCredential -or -not (Test-Path -LiteralPath $credentialTarget -PathType Leaf)) {
     if (-not $RefreshCredential -and
@@ -183,6 +201,7 @@ catch {
 Write-Host "BIT-Web Auto Login v$version installed successfully."
 Write-Host "Runtime: $InstallDirectory"
 Write-Host "Task: $taskName"
+Write-Host "Dashboard shortcut: $shortcutPath"
 if ($NoStart) {
     Write-Host 'The task is installed but was not started because -NoStart was specified.'
 }

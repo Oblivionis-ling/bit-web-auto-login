@@ -1,4 +1,4 @@
-# BIT-Web Auto Login v1.2 - offline-only tests
+﻿# BIT-Web Auto Login v1.2.5 - offline-only tests
 [CmdletBinding()]
 param()
 
@@ -250,9 +250,9 @@ Test-Case 'safe preview path is explicitly gated before credential loading' {
 
 Test-Case 'settings enable redundant probes and anti-loop safeguards' {
     $settings = Get-Content -LiteralPath (Join-Path $projectRoot 'settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    Assert-Equal ([string]$settings.Version) '1.2' 'settings version'
+    Assert-Equal ([string]$settings.Version) '1.2.5' 'settings version'
     $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'AutoLogin.ps1') -Raw -Encoding UTF8
-    Assert-True ($mainSource -match '\$ScriptVersion = ''1\.2''') 'main script version'
+    Assert-True ($mainSource -match '\$ScriptVersion = ''1\.2\.5''') 'main script version'
     Assert-True (@($settings.ConnectivityChecks).Count -ge 2) 'redundant connectivity checks'
     Assert-True ([int]$settings.InternetFailureConfirmations -ge 2) 'consecutive failure confirmation'
     Assert-True ([int]$settings.AuthenticationCooldownSeconds -ge 300) 'authentication cooldown'
@@ -262,7 +262,7 @@ Test-Case 'settings enable redundant probes and anti-loop safeguards' {
 
 Test-Case 'one-click installer uses a stable per-user deployment' {
     $source = Get-Content -LiteralPath (Join-Path $projectRoot 'Install.ps1') -Raw -Encoding UTF8
-    Assert-True ($source -match '\$version = ''1\.2''') 'installer version'
+    Assert-True ($source -match '\$version = ''1\.2\.5''') 'installer version'
     Assert-True ($source -match '\$taskName = ''BIT-Web AutoLogin''') 'stable task name'
     Assert-True ($source -match "LOCALAPPDATA.*BITWebAutoLogin") 'per-user install directory'
     Assert-True ($source -match 'MultipleInstances IgnoreNew') 'duplicate process protection'
@@ -290,6 +290,101 @@ Test-Case 'test scripts are isolated under tests' {
     $testDirectoryScripts = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter '*.ps1')
     Assert-Equal $rootTestScripts.Count 0 'root test script count'
     Assert-True ($testDirectoryScripts.Count -ge 2) 'tests directory script count'
+}
+
+Test-Case 'management GUI is a thin wrapper around existing scripts' {
+    $managementPath = Join-Path $projectRoot 'BITWebAutoLogin.Management.psm1'
+    $guiPath = Join-Path $projectRoot 'Manage.ps1'
+    $launcherPath = Join-Path $projectRoot 'Open-GUI.cmd'
+    $hiddenLauncherPath = Join-Path $projectRoot 'Open-GUI.vbs'
+    Assert-True (Test-Path -LiteralPath $managementPath -PathType Leaf) 'management module exists'
+    Assert-True (Test-Path -LiteralPath $guiPath -PathType Leaf) 'GUI script exists'
+    Assert-True (Test-Path -LiteralPath $launcherPath -PathType Leaf) 'GUI launcher exists'
+    Assert-True (Test-Path -LiteralPath $hiddenLauncherPath -PathType Leaf) 'hidden GUI launcher exists'
+
+    $managementSource = Get-Content -LiteralPath $managementPath -Raw -Encoding UTF8
+    $guiSource = Get-Content -LiteralPath $guiPath -Raw -Encoding UTF8
+    Assert-True ($managementSource -match "ScriptName 'Install\.ps1'") 'GUI install reuses installer'
+    Assert-True ($managementSource -match "ScriptName 'Uninstall\.ps1'") 'GUI uninstall reuses uninstaller'
+    Assert-True ($managementSource -match 'Remove-Item -LiteralPath \$path') 'credential deletion uses literal paths'
+    Assert-True (-not ($guiSource -match '(?i)git\s+(?:pull|fetch|clone)')) 'GUI update does not require Git'
+    Assert-True (-not ($guiSource -match '(?i)netsh(?:\.exe)?\s+wlan\s+(?:connect|add|delete|set)')) 'GUI does not mutate Wi-Fi'
+    Assert-True ($managementSource -match 'https://api\.github\.com/repos/Oblivionis-ling/bit-web-auto-login') 'updater pins the official GitHub repository'
+    Assert-True ($managementSource -match 'Expand-Archive') 'updater supports ZIP deployment without Git'
+    Assert-True ($managementSource -match 'Language\.Parser.*ParseFile|ParseFile\(') 'updater validates PowerShell syntax'
+    Assert-True ($managementSource -match "Host -ne 'api\.github\.com'") 'updater rejects non-GitHub archive hosts'
+    $installerSource = Get-Content -LiteralPath (Join-Path $projectRoot 'Install.ps1') -Raw -Encoding UTF8
+    Assert-True ($installerSource -match 'Start Menu\\Programs') 'installer creates an on-demand Start menu shortcut'
+    Assert-True (-not ($installerSource -match '(?i)Startup')) 'dashboard is not configured for startup'
+    Assert-True ($installerSource.IndexOf('$shortcut.Save()') -gt $installerSource.IndexOf('$PSCmdlet.ShouldProcess')) 'shortcut creation is gated by ShouldProcess'
+}
+
+Test-Case 'credential clear WhatIf preserves an exact temporary credential' {
+    Import-Module (Join-Path $projectRoot 'BITWebAutoLogin.Management.psm1') -Force
+    $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ('bitweb-management-' + [guid]::NewGuid().ToString('N'))
+    $temporaryInstall = Join-Path $temporaryRoot 'runtime'
+    New-Item -ItemType Directory -Path $temporaryInstall -Force | Out-Null
+    $temporaryCredential = Join-Path $temporaryInstall 'credential.xml'
+    Set-Content -LiteralPath $temporaryCredential -Value 'offline-placeholder' -Encoding UTF8
+    try {
+        Clear-BITWebCredential -InstallDirectory $temporaryInstall -ProjectDirectory $temporaryRoot -WhatIf | Out-Null
+        Assert-True (Test-Path -LiteralPath $temporaryCredential -PathType Leaf) 'WhatIf credential preservation'
+    }
+    finally {
+        Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
+    }
+}
+
+Test-Case 'dashboard status mapping covers installed and uninstalled states' {
+    Import-Module (Join-Path $projectRoot 'BITWebAutoLogin.Management.psm1') -Force
+    $installed = Get-BITWebDashboardState -Status ([pscustomobject]@{
+        IsInstalled = $true
+        TaskState = 'Ready'
+        TaskError = $null
+        CredentialExists = $true
+        InstalledVersion = '1.2.5'
+    })
+    Assert-Equal $installed.AutoLoginTitle '自动登录正常' 'installed auto-login title'
+    Assert-Equal $installed.AccountTitle '账号已配置' 'installed account title'
+    Assert-Equal $installed.PrimaryAction 'Update' 'installed primary action'
+    Assert-True $installed.RepairEnabled 'installed repair availability'
+
+    $credentialOnly = Get-BITWebDashboardState -Status ([pscustomobject]@{
+        IsInstalled = $false
+        TaskState = '未安装'
+        TaskError = $null
+        CredentialExists = $true
+        InstalledVersion = '1.2.5'
+    })
+    Assert-Equal $credentialOnly.AutoLoginTitle '尚未安装' 'credential-only auto-login title'
+    Assert-Equal $credentialOnly.AccountTitle '账号已配置' 'credential-only account title'
+    Assert-Equal $credentialOnly.PrimaryAction 'Install' 'credential-only primary action'
+
+    $empty = Get-BITWebDashboardState -Status ([pscustomobject]@{
+        IsInstalled = $false
+        TaskState = '未安装'
+        TaskError = $null
+        CredentialExists = $false
+        InstalledVersion = '—'
+    })
+    Assert-Equal $empty.AccountTitle '账号未配置' 'empty account title'
+    Assert-Equal $empty.VersionValue '—' 'empty version value'
+    Assert-True (-not $empty.RepairEnabled) 'empty repair availability'
+}
+
+Test-Case 'GUI V2 keeps dashboard and safety boundaries explicit' {
+    $guiSource = Get-Content -LiteralPath (Join-Path $projectRoot 'Manage.ps1') -Raw -Encoding UTF8
+    Assert-True (-not ($guiSource -match 'System\.Windows\.Forms\.GroupBox')) 'no traditional GroupBox layout'
+    Assert-True ($guiSource -match 'LogExpanded = \$false') 'detailed log defaults collapsed'
+    Assert-True ($guiSource -match 'Get-BITWebDashboardState') 'GUI uses management status mapping'
+    Assert-True ($guiSource -match 'ProgressCallback') 'GUI receives update progress stages'
+    Assert-True ($guiSource -match 'Set-ControlsBusy -Busy \$true') 'GUI disables actions while busy'
+    Assert-True ($guiSource -match 'ExpandOnError') 'errors expand detailed logs'
+    Assert-True ($guiSource -match 'Clear-BITWebCredential -Confirm:\$false') 'credential clear uses the management safety function'
+    Assert-True ($guiSource -match "'YesNo'.*|'YesNo'") 'destructive action confirmation remains present'
+    Assert-True (-not ($guiSource -match '(?i)Import-Clixml|GetNetworkCredential|\.Password')) 'GUI does not read credentials'
+    Assert-True (-not ($guiSource -match '(?i)NotifyIcon|ApplicationContext|Startup')) 'GUI does not add tray or startup behavior'
+    Assert-True ($guiSource -match '\[void\]\$form\.ShowDialog\(\)') 'GUI exits after its on-demand dialog closes'
 }
 
 Write-Host ("Offline test summary: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
