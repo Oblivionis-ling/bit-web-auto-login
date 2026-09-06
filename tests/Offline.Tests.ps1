@@ -250,7 +250,7 @@ Test-Case 'safe preview path is explicitly gated before credential loading' {
 
 Test-Case 'settings enable redundant probes and anti-loop safeguards' {
     $settings = Get-Content -LiteralPath (Join-Path $projectRoot 'settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    Assert-Equal ([string]$settings.Version) '1.2.5' 'settings version'
+    Assert-Equal ([string]$settings.Version) '1.3.0' 'settings version'
     $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'AutoLogin.ps1') -Raw -Encoding UTF8
     Assert-True ($mainSource -match '\$ScriptVersion = ''1\.2\.5''') 'main script version'
     Assert-True (@($settings.ConnectivityChecks).Count -ge 2) 'redundant connectivity checks'
@@ -262,7 +262,8 @@ Test-Case 'settings enable redundant probes and anti-loop safeguards' {
 
 Test-Case 'one-click installer uses a stable per-user deployment' {
     $source = Get-Content -LiteralPath (Join-Path $projectRoot 'Install.ps1') -Raw -Encoding UTF8
-    Assert-True ($source -match '\$version = ''1\.2\.5''') 'installer version'
+    Assert-True ($source -match '\$version = \[string\]\$settings\.Version') 'installer version comes from validated settings'
+    Assert-True ($source.Contains("-rc\.([1-9]\d*)")) 'installer accepts only stable or rc.N release versions'
     Assert-True ($source -match '\$taskName = ''BIT-Web AutoLogin''') 'stable task name'
     Assert-True ($source -match "LOCALAPPDATA.*BITWebAutoLogin") 'per-user install directory'
     Assert-True ($source -match 'MultipleInstances IgnoreNew') 'duplicate process protection'
@@ -385,6 +386,91 @@ Test-Case 'GUI V2 keeps dashboard and safety boundaries explicit' {
     Assert-True (-not ($guiSource -match '(?i)Import-Clixml|GetNetworkCredential|\.Password')) 'GUI does not read credentials'
     Assert-True (-not ($guiSource -match '(?i)NotifyIcon|ApplicationContext|Startup')) 'GUI does not add tray or startup behavior'
     Assert-True ($guiSource -match '\[void\]\$form\.ShowDialog\(\)') 'GUI exits after its on-demand dialog closes'
+}
+
+Test-Case 'native manager Phase 3 keeps orchestration and update safety boundaries explicit' {
+    $managerRoot = Join-Path $projectRoot 'manager\BITWebManager'
+    $updaterRoot = Join-Path $projectRoot 'manager\BITWebUpdater'
+    $statusBridgePath = Join-Path $projectRoot 'scripts\Get-ManagerStatus.ps1'
+    $actionBridgePath = Join-Path $projectRoot 'scripts\Invoke-ManagerAction.ps1'
+    Assert-True (Test-Path -LiteralPath (Join-Path $managerRoot 'BITWebManager.csproj') -PathType Leaf) 'WPF manager project exists'
+    Assert-True (Test-Path -LiteralPath $statusBridgePath -PathType Leaf) 'status bridge exists'
+    Assert-True (Test-Path -LiteralPath $actionBridgePath -PathType Leaf) 'action bridge exists'
+
+    $managerSource = [string]::Join("`n", @(
+        Get-ChildItem -LiteralPath $managerRoot -Recurse -File |
+            Where-Object { $_.Extension -in @('.cs', '.xaml') } |
+            ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8 }
+    ))
+    $updaterSource = [string]::Join("`n", @(
+        Get-ChildItem -LiteralPath $updaterRoot -Recurse -File |
+            Where-Object { $_.Extension -eq '.cs' } |
+            ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8 }
+    ))
+    $statusBridgeSource = Get-Content -LiteralPath $statusBridgePath -Raw -Encoding UTF8
+    $actionBridgeSource = Get-Content -LiteralPath $actionBridgePath -Raw -Encoding UTF8
+    Assert-True ($managerSource -match 'PowerShellService') 'PowerShell calls are centralized'
+    Assert-True ($managerSource -match 'CreateNoWindow = !options\.Interactive') 'noninteractive PowerShell console remains hidden'
+    Assert-True (-not ($managerSource -match '(?i)Register-ScheduledTask|Unregister-ScheduledTask|Import-Clixml|Export-Clixml|GetNetworkCredential|\.Password')) 'C# does not implement task or credential internals'
+    Assert-True ($managerSource -match 'HttpClient') 'native updater uses the standard .NET HTTP client'
+    Assert-True ($managerSource -match 'Oblivionis-ling' -and $managerSource -match 'bit-web-auto-login') 'native updater locks the official repository'
+    Assert-True ($managerSource -match 'AllowAutoRedirect = false') 'native updater validates redirects manually'
+    Assert-True ($managerSource -match 'credential\.xml') 'package validation explicitly rejects credential files'
+    Assert-True ($updaterSource -match 'Rollback' -and $updaterSource -match 'RunHealthCheck') 'updater implements health-checked rollback'
+    Assert-True (-not ($updaterSource -match '(?i)HttpClient|api\.github\.com|GetNetworkCredential|\.Password')) 'helper contains no network or credential logic'
+    Assert-True ($statusBridgeSource -match 'Get-BITWebManagementStatus') 'status bridge reuses management status'
+    Assert-True ($actionBridgeSource -match "ValidateSet\('RefreshCredential', 'Install', 'Repair', 'Uninstall', 'ClearCredential'\)") 'action allowlist excludes update'
+    Assert-True ($actionBridgeSource -match 'Install-BITWebAutoLogin @common -RefreshCredential') 'credential refresh reuses installer'
+    Assert-True ($actionBridgeSource -match 'Install-BITWebAutoLogin @common -UpdateOnly') 'repair reuses installer semantics'
+    Assert-True ($actionBridgeSource -match 'Uninstall-BITWebAutoLogin') 'uninstall reuses management module'
+    Assert-True ($actionBridgeSource -match 'Clear-BITWebCredential @common -Confirm:\$false') 'credential clear reuses guarded management function'
+    Assert-True (-not ($actionBridgeSource -match '(?i)Register-ScheduledTask|Unregister-ScheduledTask|Remove-Item|Import-Clixml|Export-Clixml|Invoke-WebRequest')) 'action bridge does not reimplement protected operations'
+    Assert-True ($actionBridgeSource -match '\[Console\]::Out\.WriteLine') 'action bridge writes JSON to stdout'
+    Assert-True ($actionBridgeSource -match '\[Console\]::Error\.WriteLine') 'action bridge separates errors to stderr'
+    Assert-True ($managerSource -match '(?s)ConfirmClearCredential\(\).*ConfirmClearCredentialAgain\(\)') 'credential clear requires two confirmations'
+    Assert-True ($managerSource -match 'UseShellExecute = true') 'install directory opens through the shell API'
+    Assert-True (-not ($managerSource -match 'FileName\s*=\s*"explorer\.exe"')) 'manager does not build explorer command strings'
+    Assert-True ($managerSource -match 'pack://application:,,,/Resources/Fonts/#Sarasa UI SC') 'manager uses the embedded Sarasa UI SC family'
+    Assert-True (Test-Path -LiteralPath (Join-Path $managerRoot 'Resources\Fonts\SarasaUiSC-Regular.ttf') -PathType Leaf) 'Sarasa regular font is bundled'
+    Assert-True (Test-Path -LiteralPath (Join-Path $managerRoot 'Resources\Fonts\SarasaUiSC-SemiBold.ttf') -PathType Leaf) 'Sarasa semibold font is bundled'
+    Assert-True (Test-Path -LiteralPath (Join-Path $managerRoot 'Resources\Fonts\OFL.txt') -PathType Leaf) 'Sarasa OFL license is bundled'
+}
+
+Test-Case 'Phase 4 release build and native installer stay deterministic and migration-safe' {
+    $buildPath = Join-Path $projectRoot 'build\Build-Release.ps1'
+    $installerPath = Join-Path $projectRoot 'Install.ps1'
+    Assert-True (Test-Path -LiteralPath $buildPath -PathType Leaf) 'release build script exists'
+    $buildSource = Get-Content -LiteralPath $buildPath -Raw -Encoding UTF8
+    $installerSource = Get-Content -LiteralPath $installerPath -Raw -Encoding UTF8
+    Assert-True ($buildSource -match "PublishSingleFile=true") 'release uses single-file publish'
+    Assert-True ($buildSource -match "EnableCompressionInSingleFile=true") 'release uses single-file compression'
+    Assert-True ($buildSource -match "PublishTrimmed=false") 'release disables trimming'
+    Assert-True ($buildSource -match "PublishReadyToRun=false") 'release disables ReadyToRun'
+    Assert-True ($buildSource -match "--self-contained.*true") 'release is self-contained'
+    Assert-True ($buildSource -match 'Directory\.Build\.props') 'canonical version comes from Directory.Build.props'
+    Assert-True ($buildSource -match 'release-manifest\.json' -and $buildSource -match '\.sha256') 'release emits manifest and checksum'
+    Assert-True (-not ($buildSource -match '(?i)gh\s+release|git\s+(?:push|tag)')) 'build script does not publish GitHub or Git'
+    Assert-True ($installerSource -match 'Join-Path \$InstallDirectory ''BITWebManager\.exe''') 'shortcut targets native manager'
+    Assert-True ($installerSource -match 'oldSettings' -and $installerSource -match 'mergedSettings') 'installer merges existing settings'
+    Assert-True ($installerSource -match 'credentialBackup' -and $installerSource -match 'deployedFiles') 'installer protects credential and rolls back copied files'
+    Assert-True ($installerSource -match '\$TestMode' -and $installerSource -match 'BITWebAutoLogin-installer-tests') 'installer test mode is isolated under temp'
+}
+
+Test-Case 'Phase 5 native manager keeps final visual and release experience assets' {
+    $managerRoot = Join-Path $projectRoot 'manager\BITWebManager'
+    $xaml = Get-Content -LiteralPath (Join-Path $managerRoot 'MainWindow.xaml') -Raw -Encoding UTF8
+    $appXaml = Get-Content -LiteralPath (Join-Path $managerRoot 'App.xaml') -Raw -Encoding UTF8
+    $project = Get-Content -LiteralPath (Join-Path $managerRoot 'BITWebManager.csproj') -Raw -Encoding UTF8
+    $viewModel = Get-Content -LiteralPath (Join-Path $managerRoot 'ViewModels\MainWindowViewModel.cs') -Raw -Encoding UTF8
+    $iconPath = Join-Path $managerRoot 'Resources\BITWebManager.ico'
+    Assert-True (Test-Path -LiteralPath $iconPath -PathType Leaf) 'multi-size application icon exists'
+    Assert-True ((Get-Item -LiteralPath $iconPath).Length -gt 4096) 'application icon contains rendered frames'
+    Assert-True ($project -match '<ApplicationIcon>Resources\\BITWebManager\.ico</ApplicationIcon>') 'EXE embeds the application icon'
+    Assert-True ($xaml -match 'Icon="Resources/BITWebManager\.ico"') 'window uses the application icon'
+    Assert-True ($viewModel -match 'PrimaryActionText => IsInstalled \? "检查更新" : "安装自动登录"') 'primary action follows installation state'
+    Assert-True ($xaml -notmatch 'Text="当前版本"') 'legacy core version is not repeated in the status card'
+    Assert-True ($xaml -match 'BIT-Web 不读取或显示保存的密码') 'final security statement remains visible'
+    Assert-True ($appXaml -match 'IsPressed' -and $appXaml -match 'IsKeyboardFocused') 'button pressed and keyboard focus states are styled'
 }
 
 Write-Host ("Offline test summary: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
