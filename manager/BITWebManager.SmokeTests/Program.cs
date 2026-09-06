@@ -167,6 +167,19 @@ await TestAsync("refreshes status after a write action", async () =>
     Assert(!viewModel.IsBusy, "busy cleared");
 });
 
+await TestAsync("treats credential prompt cancellation as a safe non-error outcome", async () =>
+{
+    var viewModel = new MainWindowViewModel(
+        new SequenceStatusService(Status(true, "Ready", true, "1.3.0-rc.3")),
+        new CancelledCredentialActionService(), new RecordingDirectoryService(), new RecordingDialogService());
+    await viewModel.LoadAsync();
+    await viewModel.ExecuteManagerActionAsync(ManagerAction.RefreshCredential);
+    Assert(!viewModel.IsBusy && !viewModel.IsCriticalOperation, "busy state cleared after credential cancellation");
+    Assert(!viewModel.HasError && string.IsNullOrEmpty(viewModel.TechnicalDetails), "cancellation does not expose technical error details");
+    Assert(viewModel.FeedbackMessage == "账号输入已取消，未保存新的凭据。", "cancellation feedback is explicit");
+    Assert(viewModel.FeedbackTone == StatusTone.Warning && viewModel.ActivityTitle == "账号输入已取消", "cancellation uses warning presentation");
+});
+
 await TestAsync("rejects concurrent write operations", async () =>
 {
     var action = new BlockingActionService();
@@ -777,6 +790,18 @@ sealed class BlockingActionService : IManagementActionService
         CallCount++; Started.TrySetResult(); await Release.Task.WaitAsync(cancellationToken);
         return new ManagerActionResult { SchemaVersion = 1, Success = true, Action = "repair", Message = "ok", RequiresRefresh = true };
     }
+}
+
+sealed class CancelledCredentialActionService : IManagementActionService
+{
+    public Task<ManagerActionResult> ExecuteAsync(
+        ManagerAction action,
+        bool interactive,
+        CancellationToken cancellationToken = default) =>
+        throw new ManagementActionException(
+            "账号输入已取消，未保存新的凭据。",
+            "PowerShell returned CREDENTIAL_CANCELLED.",
+            "CREDENTIAL_CANCELLED");
 }
 
 sealed class RecordingDirectoryService : IInstallDirectoryService

@@ -305,7 +305,17 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged
         }
         catch (ManagementActionException exception)
         {
-            ShowOperationFailure(exception.Message, exception.TechnicalDetails);
+            if (string.Equals(exception.ErrorCode, "CREDENTIAL_CANCELLED", StringComparison.Ordinal))
+            {
+                HasError = false;
+                TechnicalDetails = string.Empty;
+                AddActivity("账号输入已取消", "未保存新的凭据", StatusTone.Warning);
+                SetFeedback("账号输入已取消，未保存新的凭据。", StatusTone.Warning);
+            }
+            else
+            {
+                ShowOperationFailure(exception.Message, exception.TechnicalDetails);
+            }
         }
         catch (Exception exception)
         {
