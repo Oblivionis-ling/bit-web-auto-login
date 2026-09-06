@@ -1,6 +1,6 @@
 # 更新记录
 
-## v1.3.0 — 开发中
+## v1.3.0 — 2026-09-06
 
 - GUI 从 PowerShell WinForms Dashboard 迁移为独立 C# / .NET 8 WPF Native Manager，按需打开、关闭即退出。
 - 完整覆盖状态、安装、修复、更换账号、卸载、清除凭据和手动 GitHub Release 更新。

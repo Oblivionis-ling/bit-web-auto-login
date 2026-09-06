@@ -36,7 +36,7 @@ BIT-Web Auto Login 是一个面向北京理工大学校园网的小型 Windows �
 
 ### 系统要求
 
-- Windows 10 或 Windows 11。
+- Windows 10 或 Windows 11（x64）。
 - Windows PowerShell 5.1。
 - Windows 已经保存并能够连接 <code>BIT-Web</code>，或已经接入北理工校园网有线网络。
 - 当前用户可以使用 Windows 任务计划程序。
@@ -91,7 +91,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 - 用户名在凭据文件中可见；密码由 Windows DPAPI 保护，只能由创建它的 Windows 用户在同一台电脑上解密。
 - 程序不会创建、切换、启用、禁用或修改网络连接。
 - 默认认证入口使用 HTTP，这是北理工校园网服务端的既有条件；脚本无法替服务端增加 HTTPS。
-- 在线更新只在点击 **检查并更新** 后访问固定的 GitHub HTTPS API；不会上传账号、密码、日志或设置。
+- 在线更新只在点击 **检查更新** 后访问固定的 GitHub HTTPS API；不会上传账号、密码、日志或设置。
 - 校园网有线默认识别 <code>10.*</code> 地址。若电脑可能接入其他同地址段网络，建议只使用 <code>Wifi</code> 模式。
 
 ## 常见问题
@@ -111,6 +111,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ### 更新或修复需要重新输入账号吗？
 
 正常情况下不需要。安装器和 Updater 会保留现有 `credential.xml`，升级测试会通过文件 SHA-256 确认凭据未被改写。
+
+### 更新下载出现连接重置或超时怎么办？
+
+请切换网络或代理节点后重新点击 **检查更新**。如果失败发生在正式部署前，当前安装不会被修改；重新下载后仍会执行完整的来源、SHA-256 和包结构校验。
 
 ## 技术与项目结构
 
