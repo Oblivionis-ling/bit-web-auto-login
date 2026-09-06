@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>BITWebManager</AssemblyName>
+    <RootNamespace>BITWebManager</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Resources\BITWebManager.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BITWebVersioning\BITWebVersioning.csproj" />
+    <Resource Include="Resources\BITWebManager.ico" />
+    <Resource Include="Resources\Fonts\SarasaUiSC-Regular.ttf" />
+    <Resource Include="Resources\Fonts\SarasaUiSC-SemiBold.ttf" />
+    <Content Include="Resources\Fonts\OFL.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Licenses\Sarasa-Gothic-OFL.txt</Link>
+    </Content>
+    <Content Include="..\..\scripts\Get-ManagerStatus.ps1" Link="PowerShell\Get-ManagerStatus.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\scripts\Invoke-ManagerAction.ps1" Link="PowerShell\Invoke-ManagerAction.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\scripts\Test-ManagerUpdatePackage.ps1" Link="PowerShell\Test-ManagerUpdatePackage.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\..\AutoLogin.ps1;..\..\BITWebAutoLogin.psm1;..\..\BITWebAutoLogin.Management.psm1;..\..\Install.ps1;..\..\Uninstall.ps1;..\..\RunHidden.vbs;..\..\settings.json;..\..\Manage.ps1;..\..\Open-GUI.cmd;..\..\Open-GUI.vbs"
+             Link="PowerShell\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>
