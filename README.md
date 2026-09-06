@@ -140,11 +140,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 │   └── Test-ManagerUpdatePackage.ps1# 更新包 PowerShell 语法检查
 ├── tests/
 │   ├── Offline.Tests.ps1            # 完全离线的逻辑回归测试
-│   └── Test-Diagnostics.ps1         # 只读运行诊断
+│   ├── Installer.Native.Tests.ps1    # 隔离的 Native Installer 测试
+│   └── Test-Diagnostics.ps1          # 只读运行诊断
 ├── docs/
-│   ├── 全面测试流程-v1.1.md          # 人工验收流程
-│   └── archive/
-│       └── README-v1.2-before-redesign.md
+│   ├── DEVELOPMENT.md                # 架构、边界与发布维护
+│   ├── TESTING.md                    # 当前测试与包验证命令
+│   └── releases/v1.3.0.md            # v1.3.0 最终发布报告
 └── .github/workflows/
     └── powershell-tests.yml         # Windows CI
 ~~~
@@ -162,7 +163,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 - **只读运行诊断**：检查连接资格、计划任务、后台进程和日志，不修改网络设置。
 - **真实环境人工验收**：覆盖断网恢复、错误网络保护、睡眠唤醒、重启和长期运行。
 
-测试实现位于 [tests/Offline.Tests.ps1](tests/Offline.Tests.ps1)，完整人工流程见 [docs/全面测试流程-v1.1.md](docs/全面测试流程-v1.1.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
+维护入口见 [项目文档索引](docs/README.md)，测试命令见 [测试指南](docs/TESTING.md)，版本变化见 [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 

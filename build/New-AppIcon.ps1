@@ -11,17 +11,16 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
     $OutputPath = Join-Path $projectRoot 'manager\BITWebManager\Resources\BITWebManager.ico'
 }
-if ([string]::IsNullOrWhiteSpace($PreviewPath)) {
-    $PreviewPath = Join-Path $projectRoot 'assets\readme\app-icon.png'
-}
 $OutputPath = [IO.Path]::GetFullPath($OutputPath)
-$PreviewPath = [IO.Path]::GetFullPath($PreviewPath)
 $expectedRoot = ([IO.Path]::GetFullPath($projectRoot)).TrimEnd('\') + '\'
 if (-not $OutputPath.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) {
     throw "OutputPath must stay under $expectedRoot"
 }
-if (-not $PreviewPath.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "PreviewPath must stay under $expectedRoot"
+if (-not [string]::IsNullOrWhiteSpace($PreviewPath)) {
+    $PreviewPath = [IO.Path]::GetFullPath($PreviewPath)
+    if (-not $PreviewPath.StartsWith($expectedRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "PreviewPath must stay under $expectedRoot"
+    }
 }
 
 Add-Type -AssemblyName System.Drawing
@@ -117,6 +116,12 @@ finally {
     $stream.Dispose()
 }
 
-[IO.File]::WriteAllBytes($PreviewPath, [byte[]]$frames[$frames.Count - 1])
+if (-not [string]::IsNullOrWhiteSpace($PreviewPath)) {
+    $previewDirectory = Split-Path -Parent $PreviewPath
+    if (-not (Test-Path -LiteralPath $previewDirectory -PathType Container)) {
+        New-Item -ItemType Directory -Path $previewDirectory -Force | Out-Null
+    }
+    [IO.File]::WriteAllBytes($PreviewPath, [byte[]]$frames[$frames.Count - 1])
+}
 
 Write-Host "Generated $OutputPath with $($sizes.Count) frames: $($sizes -join ', ') px"
