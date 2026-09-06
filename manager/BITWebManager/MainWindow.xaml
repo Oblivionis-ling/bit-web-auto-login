@@ -103,6 +103,11 @@
                 </Border>
 
                 <Grid Grid.Row="2" Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="18" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="5*" MinWidth="420" />
                         <ColumnDefinition Width="20" />
@@ -156,9 +161,48 @@
                         </Border>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="2">
+                    <StackPanel Grid.Row="2" Grid.Column="0">
+                        <TextBlock Text="高级" Style="{StaticResource SectionTitleStyle}" />
+                        <Border Style="{StaticResource CardStyle}" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <Button Content="卸载自动登录"
+                                            Command="{Binding UninstallCommand}"
+                                            Style="{StaticResource DangerButtonStyle}" />
+                                    <TextBlock Text="保留账号与设置"
+                                               Margin="2,6,2,0"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource SubtleTextBrush}"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <Button Content="清除账号信息"
+                                            Command="{Binding ClearCredentialCommand}"
+                                            Style="{StaticResource DangerButtonStyle}" />
+                                    <TextBlock Text="停用任务并清除凭据"
+                                               Margin="2,6,2,0"
+                                               FontSize="11.5"
+                                               Foreground="{StaticResource SubtleTextBrush}"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <TextBlock Text="快速操作" Style="{StaticResource SectionTitleStyle}" />
-                        <Border Style="{StaticResource CardStyle}">
+                        <Border Grid.Row="1" Style="{StaticResource CardStyle}" VerticalAlignment="Stretch">
                             <StackPanel>
                                 <Button Command="{Binding PrimaryActionCommand}"
                                         Style="{StaticResource PrimaryActionButtonStyle}">
@@ -196,28 +240,10 @@
                                            TextWrapping="Wrap" />
                             </StackPanel>
                         </Border>
-
-                        <TextBlock Text="高级" Style="{StaticResource SectionTitleStyle}" Margin="0,18,0,12" />
-                        <Border Style="{StaticResource CardStyle}" Padding="20,14">
-                            <StackPanel>
-                                <Button Content="卸载自动登录"
-                                        Command="{Binding UninstallCommand}"
-                                        Style="{StaticResource DangerButtonStyle}" />
-                                <Button Content="清除账号信息"
-                                        Command="{Binding ClearCredentialCommand}"
-                                        Style="{StaticResource DangerButtonStyle}"
-                                        Margin="0,10,0,0" />
-                                <TextBlock Text="卸载会保留账号；清除账号需要二次确认"
-                                           Margin="0,10,0,0"
-                                           FontSize="11.5"
-                                           Foreground="{StaticResource SubtleTextBrush}"
-                                           TextWrapping="Wrap" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
 
-                <StackPanel Grid.Row="3" Margin="0,20,0,0">
+                <StackPanel Grid.Row="3" Margin="0,18,0,0">
                     <TextBlock Text="最近活动" Style="{StaticResource SectionTitleStyle}" />
                     <Border Style="{StaticResource CardStyle}" Padding="20,16">
                         <StackPanel>
