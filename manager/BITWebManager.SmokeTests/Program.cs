@@ -399,6 +399,29 @@ await TestAsync("restricts updater health-check failure injection to RC builds",
     return Task.CompletedTask;
 });
 
+await TestAsync("reads direct parent process identity for updater handoff validation", async () =>
+{
+    var start = new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "powershell.exe",
+        UseShellExecute = false,
+        CreateNoWindow = true,
+    };
+    foreach (var argument in new[] { "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 10" })
+        start.ArgumentList.Add(argument);
+    using var child = System.Diagnostics.Process.Start(start) ?? throw new InvalidOperationException("Failed to start process identity fixture.");
+    try
+    {
+        Assert(WindowsProcessIdentity.GetParentProcessId(child.Id) == Environment.ProcessId,
+            "child records the smoke-test process as its direct parent");
+    }
+    finally
+    {
+        if (!child.HasExited) child.Kill(entireProcessTree: true);
+        await child.WaitForExitAsync();
+    }
+});
+
 await TestAsync("validates a package and rejects Zip Slip", async () =>
 {
     var work = NewTestDirectory("package");

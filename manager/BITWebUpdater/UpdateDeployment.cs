@@ -66,12 +66,38 @@ public sealed class UpdateDeployment(IUpdaterRuntime runtime, bool failHealthChe
     private static void WaitForManager(UpdaterOptions options)
     {
         if (options.ManagerProcessId == 0 && options.TestMode) return;
-        using var process = System.Diagnostics.Process.GetProcessById(options.ManagerProcessId);
-        var expectedPath = Path.Combine(options.TargetDirectory, "BITWebManager.exe");
-        var actualPath = process.MainModule?.FileName ?? string.Empty;
-        if (!Path.GetFullPath(actualPath).Equals(Path.GetFullPath(expectedPath), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Manager PID does not belong to the target installation.");
-        if (!process.WaitForExit(60000)) throw new TimeoutException("Manager did not exit within 60 seconds.");
+        var parentProcessId = WindowsProcessIdentity.GetParentProcessId(Environment.ProcessId);
+        if (parentProcessId != options.ManagerProcessId)
+            throw new InvalidOperationException("Updater was not launched by the supplied Manager PID.");
+
+        System.Diagnostics.Process process;
+        try
+        {
+            process = System.Diagnostics.Process.GetProcessById(options.ManagerProcessId);
+        }
+        catch (ArgumentException)
+        {
+            // The direct-parent identity above remains available after the Manager exits.
+            return;
+        }
+
+        using (process)
+        {
+            if (process.HasExited) return;
+            string actualPath;
+            try
+            {
+                actualPath = process.MainModule?.FileName ?? string.Empty;
+            }
+            catch (InvalidOperationException) when (process.HasExited)
+            {
+                return;
+            }
+            var expectedPath = Path.Combine(options.TargetDirectory, "BITWebManager.exe");
+            if (!Path.GetFullPath(actualPath).Equals(Path.GetFullPath(expectedPath), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Manager PID does not belong to the target installation.");
+            if (!process.WaitForExit(60000)) throw new TimeoutException("Manager did not exit within 60 seconds.");
+        }
     }
 
     private static void MergeSettings(string? oldSettings, string newSettingsPath, ReleaseVersion expectedVersion)
