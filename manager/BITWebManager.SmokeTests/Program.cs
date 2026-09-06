@@ -389,6 +389,16 @@ await TestAsync("parses the updater command contract", () =>
     return Task.CompletedTask;
 });
 
+await TestAsync("restricts updater health-check failure injection to RC builds", () =>
+{
+    Assert(!RcQaFailureInjection.ShouldFailHealthCheck(ReleaseVersion.Parse("1.3.0-rc.2"), null), "unset injection is inactive");
+    Assert(!RcQaFailureInjection.ShouldFailHealthCheck(ReleaseVersion.Parse("1.3.0-rc.2"), "0"), "non-trigger value is inactive");
+    Assert(RcQaFailureInjection.ShouldFailHealthCheck(ReleaseVersion.Parse("1.3.0-rc.2"), "1"), "RC updater accepts explicit injection");
+    AssertThrows<InvalidOperationException>(() =>
+        RcQaFailureInjection.ShouldFailHealthCheck(ReleaseVersion.Parse("1.3.0"), "1"));
+    return Task.CompletedTask;
+});
+
 await TestAsync("validates a package and rejects Zip Slip", async () =>
 {
     var work = NewTestDirectory("package");
@@ -473,6 +483,19 @@ await TestAsync("rolls back when the new manager health check fails", () =>
         Assert(File.ReadAllText(Path.Combine(target, "marker.txt")) == "old", "old file restored");
         Assert(File.ReadAllText(Path.Combine(target, "credential.xml")) == "secret", "credential preserved after rollback");
         Assert(runtime.InstallerRuns == 2 && runtime.LaunchRuns == 1, "rollback installer and restart");
+    });
+    return Task.CompletedTask;
+});
+
+await TestAsync("RC QA failure injection rolls back before the new manager health check", () =>
+{
+    WithDeploymentFixture(healthSucceeds: true, (target, prepared, options, runtime) =>
+    {
+        AssertThrows<InvalidOperationException>(() => new UpdateDeployment(runtime, failHealthCheckForRcQa: true).Execute(options));
+        Assert(File.ReadAllText(Path.Combine(target, "marker.txt")) == "old", "old file restored after injected failure");
+        Assert(File.ReadAllText(Path.Combine(target, "credential.xml")) == "secret", "credential preserved after injected failure");
+        Assert(runtime.InstallerRuns == 2 && runtime.HealthCheckRuns == 0 && runtime.LaunchRuns == 1,
+            "injection occurs after install, before health check, then rolls back and restarts");
     });
     return Task.CompletedTask;
 });
@@ -769,9 +792,14 @@ sealed class DelayedHttpHandler : HttpMessageHandler
 sealed class RecordingUpdaterRuntime(bool healthSucceeds) : IUpdaterRuntime
 {
     public int InstallerRuns { get; private set; }
+    public int HealthCheckRuns { get; private set; }
     public int LaunchRuns { get; private set; }
     public void RunInstaller(string targetDirectory) => InstallerRuns++;
-    public bool RunHealthCheck(string managerPath, ReleaseVersion expectedVersion, string healthResultPath) => healthSucceeds;
+    public bool RunHealthCheck(string managerPath, ReleaseVersion expectedVersion, string healthResultPath)
+    {
+        HealthCheckRuns++;
+        return healthSucceeds;
+    }
     public void LaunchManager(string managerPath) => LaunchRuns++;
 }
 

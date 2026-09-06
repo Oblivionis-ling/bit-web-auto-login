@@ -4,7 +4,7 @@ using BITWebVersioning;
 
 namespace BITWebUpdater;
 
-public sealed class UpdateDeployment(IUpdaterRuntime runtime)
+public sealed class UpdateDeployment(IUpdaterRuntime runtime, bool failHealthCheckForRcQa = false)
 {
     public void Execute(UpdaterOptions options)
     {
@@ -44,6 +44,8 @@ public sealed class UpdateDeployment(IUpdaterRuntime runtime)
             runtime.RunInstaller(target);
             var healthPath = Path.Combine(Path.GetDirectoryName(prepared)!, "health-result.json");
             var managerPath = Path.Combine(target, "BITWebManager.exe");
+            if (failHealthCheckForRcQa)
+                throw new InvalidOperationException("RC QA injected manager health-check failure.");
             if (!runtime.RunHealthCheck(managerPath, options.ExpectedVersion, healthPath))
                 throw new InvalidOperationException("Updated manager health check failed.");
             WriteResult(options.ResultPath, true, options.ExpectedVersion, null);
