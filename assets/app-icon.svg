@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">BIT-Web Manager application icon</title>
+  <desc id="desc">A calm navy utility tile with a connected white B and a cyan status node.</desc>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="#16324A"/>
+  <path d="M76 52v152m0-142h54c30 0 48 16 48 40s-18 40-48 40H76m0 0h60c31 0 50 17 50 43s-19 43-50 43H76"
+        fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="190" cy="62" r="15" fill="#45C7D8" stroke="#16324A" stroke-width="7"/>
+</svg>

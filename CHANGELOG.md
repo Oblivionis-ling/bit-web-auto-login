@@ -1,5 +1,15 @@
 # 更新记录
 
+## v1.3.0 — 开发中
+
+- GUI 从 PowerShell WinForms Dashboard 迁移为独立 C# / .NET 8 WPF Native Manager，按需打开、关闭即退出。
+- 完整覆盖状态、安装、修复、更换账号、卸载、清除凭据和手动 GitHub Release 更新。
+- 新增固定官方仓库、SHA-256、ZIP 安全解压、独立 Updater、健康检查和失败回滚。
+- 建立 `win-x64` self-contained 压缩 single-file 发布流程，普通用户无需安装 Git 或 .NET Runtime。
+- 安装器迁移开始菜单快捷方式到 `BITWebManager.exe`，升级时保留 DPAPI 凭据与用户 settings。
+- 使用更纱黑体 UI SC Regular / SemiBold 私有字体，并随包附带 SIL OFL 1.1 许可证。
+- 完成 100%～200% DPI、键盘焦点、状态反馈和危险确认体验收口，并加入多尺寸 Native Manager 应用图标。
+
 ## v1.2.5 — 2026-09-05
 
 - 新增按需打开的 Windows Dashboard，使用状态卡、动态主操作、折叠日志和独立高级操作区呈现安装、GitHub 更新、更换账号、卸载与清除账号信息。
