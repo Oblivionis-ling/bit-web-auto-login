@@ -5,6 +5,7 @@
 ```text
 manager/BITWebManager/       WPF Native Manager
 manager/BITWebUpdater/       self-update helper
+manager/BITWebBootstrapper/  embeds the release ZIP and opens Manager from a verified temporary workspace
 manager/BITWebVersioning/    受限 Stable/RC 版本模型
 scripts/                     Manager 的 PowerShell JSON bridge 与包语法检查
 tests/                       PowerShell 和 Installer 隔离测试
@@ -79,7 +80,7 @@ RC 构建必须显式传入 `-ReleaseVersion`，且 base version 必须等于 ca
 2. 从干净、已提交的源码构建 Stable，不为 Stable 传 `-ReleaseVersion`。
 3. 校验 ZIP、SHA、manifest、settings、Manager/Updater ProductVersion 和 health-check。
 4. tag 必须指向已经验证的源码提交。
-5. Release 只上传 ZIP 与 `.sha256`；Stable 必须 `draft=false`、`prerelease=false`。
+5. Release 面向用户上传安装 EXE 与 `.sha256`，同时保留 Manager 在线更新使用的 ZIP 与 `.sha256`；Stable 必须 `draft=false`、`prerelease=false`。
 6. 发布后从 GitHub 重新下载资产并再次验证，不能只信任上传源文件。
 7. 已发布 tag 和同名资产不可覆盖；修复使用新版本号。
 

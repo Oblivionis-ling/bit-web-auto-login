@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img alt="当前版本 v1.3.0" src="https://img.shields.io/badge/version-v1.3.0-243746?style=flat-square"></a>
+  <a href="CHANGELOG.md"><img alt="当前版本 v1.4.0" src="https://img.shields.io/badge/version-v1.4.0-243746?style=flat-square"></a>
   <a href="#系统要求"><img alt="支持 Windows 10 和 Windows 11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-243746?style=flat-square&logo=windows11&logoColor=white"></a>
   <a href="https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml"><img alt="PowerShell 离线测试状态" src="https://github.com/Oblivionis-ling/bit-web-auto-login/actions/workflows/powershell-tests.yml/badge.svg"></a>
 </p>
@@ -41,15 +41,15 @@ BIT-Web Auto Login 是一个面向北京理工大学校园网的小型 Windows �
 - Windows 已经保存并能够连接 <code>BIT-Web</code>，或已经接入北理工校园网有线网络。
 - 当前用户可以使用 Windows 任务计划程序。
 
-### 1. 下载 Release
+### 1. 下载一个 EXE
 
-从[官方 GitHub Releases](https://github.com/Oblivionis-ling/bit-web-auto-login/releases)下载 `BITWebAutoLogin-v1.3.0-win-x64.zip`，然后完整解压。正式包已包含 Native Manager、Updater 和 .NET 8 Windows Desktop Runtime，不要求安装 Git 或 .NET。
+从[官方 GitHub Releases](https://github.com/Oblivionis-ling/bit-web-auto-login/releases)下载 `BITWebAutoLogin-Setup-v1.4.0-win-x64.exe`。它已经包含 Native Manager、Updater、运行脚本和 .NET 8 Runtime；不要求安装 Git 或 .NET，也不需要解压 ZIP。
 
-### 2. 安装并打开管理器
+### 2. 运行并安装
 
-双击 `Install.cmd`。安装完成后，从 Windows 开始菜单打开 **BIT-Web 自动登录管理器**；快捷方式会直接启动 `BITWebManager.exe`。
+双击下载的 EXE，程序会校验内置运行包并直接打开 **BIT-Web 自动登录管理器**。首次使用点击 **安装自动登录**，按 Windows 凭据窗口提示输入校园网账号和密码即可。之后可以从开始菜单再次打开管理器。
 
-首次安装会弹出 Windows 凭据输入框。输入校园网账号和密码后，凭据使用当前 Windows 用户的 DPAPI 安全保存；密码不会出现在命令行或 Manager 日志中。
+凭据使用当前 Windows 用户的 DPAPI 安全保存；密码不会出现在命令行或 Manager 日志中。安装 EXE 临时展开的文件会在管理器关闭后自动清理。
 
 > Windows Defender SmartScreen 可能对尚未建立信誉的未签名版本显示提示。请只从本仓库的 Releases 下载，并在继续前核对文件名与 Release 页面提供的 SHA-256。
 
@@ -98,7 +98,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 
 ### 为什么 Windows 会显示 SmartScreen？
 
-当前 v1.3 构建尚未使用 Authenticode 代码签名，新发布的 EXE 可能暂时没有 SmartScreen 信誉。这不代表 Windows 已判断程序恶意。请只从官方 Release 下载、核对 SHA-256，不要从网盘或第三方镜像获取安装包。
+当前 v1.4 构建尚未使用 Authenticode 代码签名，新发布的 EXE 可能暂时没有 SmartScreen 信誉。这不代表 Windows 已判断程序恶意。请只从官方 Release 下载、核对 SHA-256，不要从网盘或第三方镜像获取安装包。
 
 ### Manager 关闭后自动登录还会运行吗？
 
@@ -123,9 +123,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 
 ~~~text
 .
-├── Install.cmd                      # 可双击的一键安装入口
-├── manager/                         # C# / WPF Native Manager 与 Updater 源码
-├── build/Build-Release.ps1          # 一条命令生成 ZIP、SHA-256 与 manifest
+├── Install.cmd                      # ZIP 包内的兼容安装入口
+├── manager/                         # Manager、Updater 与单 EXE Bootstrapper 源码
+├── build/Build-Release.ps1          # 生成安装 EXE、更新 ZIP、SHA-256 与 manifest
 ├── Open-GUI.* / Manage.ps1          # 源码仓库中的 legacy fallback
 ├── BITWebAutoLogin.Management.psm1  # GUI 管理操作层
 ├── Install.ps1                      # 当前用户安装与升级
@@ -145,7 +145,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ├── docs/
 │   ├── DEVELOPMENT.md                # 架构、边界与发布维护
 │   ├── TESTING.md                    # 当前测试与包验证命令
-│   └── releases/v1.3.0.md            # v1.3.0 最终发布报告
+│   └── releases/                     # v1.3 发布报告与 v1.4 实施验证
 └── .github/workflows/
     └── powershell-tests.yml         # Windows CI
 ~~~
@@ -168,5 +168,5 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Uninstall.ps1
 ---
 
 <p align="center">
-  <sub>BIT-Web Auto Login v1.3.0 · 北京理工大学校园网 · Windows 当前用户后台任务</sub>
+  <sub>BIT-Web Auto Login v1.4.0 · 北京理工大学校园网 · Windows 当前用户后台任务</sub>
 </p>

@@ -56,9 +56,10 @@ New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 $work = Join-Path $OutputDirectory ('.staging-' + [guid]::NewGuid().ToString('N'))
 $managerPublish = Join-Path $work 'manager-publish'
 $updaterPublish = Join-Path $work 'updater-publish'
+$bootstrapperPublish = Join-Path $work 'bootstrapper-publish'
 $packageRootName = "BITWebAutoLogin-v$version-win-x64"
 $packageRoot = Join-Path $work $packageRootName
-New-Item -ItemType Directory -Path $managerPublish, $updaterPublish, $packageRoot -Force | Out-Null
+New-Item -ItemType Directory -Path $managerPublish, $updaterPublish, $bootstrapperPublish, $packageRoot -Force | Out-Null
 
 $publishProperties = @(
     '--self-contained', 'true',
@@ -82,6 +83,9 @@ try {
     & $dotnet clean (Join-Path $projectRoot 'manager\BITWebUpdater\BITWebUpdater.csproj') `
         '--configuration' $Configuration '--verbosity' 'quiet'
     if ($LASTEXITCODE -ne 0) { throw "Updater clean failed with exit code $LASTEXITCODE." }
+    & $dotnet clean (Join-Path $projectRoot 'manager\BITWebBootstrapper\BITWebBootstrapper.csproj') `
+        '--configuration' $Configuration '--verbosity' 'quiet'
+    if ($LASTEXITCODE -ne 0) { throw "Bootstrapper clean failed with exit code $LASTEXITCODE." }
 
     & $dotnet publish (Join-Path $projectRoot 'manager\BITWebManager\BITWebManager.csproj') `
         '--configuration' $Configuration '--runtime' 'win-x64' '--output' $managerPublish @publishProperties
@@ -180,9 +184,30 @@ try {
     $checksumPath = $zipPath + '.sha256'
     [IO.File]::WriteAllText($checksumPath, "$zipHash  $zipName`r`n", [Text.UTF8Encoding]::new($false))
 
+    & $dotnet publish (Join-Path $projectRoot 'manager\BITWebBootstrapper\BITWebBootstrapper.csproj') `
+        '--configuration' $Configuration '--runtime' 'win-x64' '--output' $bootstrapperPublish `
+        @publishProperties "-p:PayloadZip=$zipPath"
+    if ($LASTEXITCODE -ne 0) { throw "Bootstrapper publish failed with exit code $LASTEXITCODE." }
+    $setupName = "BITWebAutoLogin-Setup-v$version-win-x64.exe"
+    $setupPath = Join-Path $OutputDirectory $setupName
+    $publishedSetup = Join-Path $bootstrapperPublish 'BITWebAutoLogin-Setup.exe'
+    if (-not (Test-Path -LiteralPath $publishedSetup -PathType Leaf)) {
+        throw 'Bootstrapper publish did not produce BITWebAutoLogin-Setup.exe.'
+    }
+    Copy-Item -LiteralPath $publishedSetup -Destination $setupPath
+    $setupVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($setupPath).ProductVersion
+    if ($setupVersion -ne $version) { throw "Setup ProductVersion '$setupVersion' does not match '$version'." }
+    $setupHash = (Get-FileHash -LiteralPath $setupPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $setupChecksumPath = $setupPath + '.sha256'
+    [IO.File]::WriteAllText($setupChecksumPath, "$setupHash  $setupName`r`n", [Text.UTF8Encoding]::new($false))
+
     $result = [ordered]@{
         schemaVersion = 1
         version = $version
+        setup = $setupPath
+        setupChecksum = $setupChecksumPath
+        setupSha256 = $setupHash
+        setupBytes = (Get-Item -LiteralPath $setupPath).Length
         zip = $zipPath
         checksum = $checksumPath
         sha256 = $zipHash

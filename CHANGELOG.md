@@ -1,5 +1,12 @@
 # 更新记录
 
+## v1.4.0 — 2026-09-19
+
+- 新增面向普通用户的单 EXE 入口：下载后直接运行，无需克隆仓库、解压 ZIP 或手动执行脚本。
+- 启动器内嵌完整 self-contained 运行包，先校验版本、manifest、文件大小和 SHA-256，再打开现有 WPF Manager。
+- Manager 关闭后自动清理临时展开目录；实际安装仍由用户在控制面板中触发，不会仅因打开 EXE 就创建任务或凭据。
+- 保留 ZIP 作为 Manager 在线更新资产和维护入口；首次安装、升级/修复、凭据保留与失败回滚继续复用已验证的 v1.3 链路。
+
 ## v1.3.0 — 2026-09-06
 
 - GUI 从 PowerShell WinForms Dashboard 迁移为独立 C# / .NET 8 WPF Native Manager，按需打开、关闭即退出。

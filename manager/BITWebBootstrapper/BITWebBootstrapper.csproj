@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>BITWebAutoLogin-Setup</AssemblyName>
+    <RootNamespace>BITWebBootstrapper</RootNamespace>
+    <ApplicationIcon>..\BITWebManager\Resources\BITWebManager.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="..\BITWebManager\Resources\BITWebManager.ico" Link="BITWebManager.ico" />
+    <EmbeddedResource Include="$(PayloadZip)" LogicalName="BITWebBootstrapper.Payload.zip"
+                      Condition="'$(PayloadZip)' != ''" />
+  </ItemGroup>
+
+  <Target Name="RequirePayloadForPublish" BeforeTargets="Publish">
+    <Error Condition="'$(PayloadZip)' == ''" Text="PayloadZip is required when publishing the bootstrapper." />
+    <Error Condition="!Exists('$(PayloadZip)')" Text="PayloadZip does not exist: $(PayloadZip)" />
+  </Target>
+</Project>

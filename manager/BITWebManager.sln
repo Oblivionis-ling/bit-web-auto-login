@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BITWebUpdater", "BITWebUpda
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BITWebVersioning", "BITWebVersioning\BITWebVersioning.csproj", "{A5B7E8A1-5D59-4BD7-A970-3BE9B2587701}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BITWebBootstrapper", "BITWebBootstrapper\BITWebBootstrapper.csproj", "{C9187B1E-15AF-4D8D-BBA5-AF22AE4BA02B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{A5B7E8A1-5D59-4BD7-A970-3BE9B2587701}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5B7E8A1-5D59-4BD7-A970-3BE9B2587701}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5B7E8A1-5D59-4BD7-A970-3BE9B2587701}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9187B1E-15AF-4D8D-BBA5-AF22AE4BA02B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9187B1E-15AF-4D8D-BBA5-AF22AE4BA02B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9187B1E-15AF-4D8D-BBA5-AF22AE4BA02B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9187B1E-15AF-4D8D-BBA5-AF22AE4BA02B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

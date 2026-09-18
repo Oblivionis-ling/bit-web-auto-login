@@ -11,7 +11,7 @@ $dotnet = "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Offline.Tests.ps1
 ```
 
-当前 v1.3.0 基线：`.NET` 0 warnings / 0 errors，PowerShell Offline 29 passed。
+当前 v1.4.0 基线：`.NET` 0 warnings / 0 errors，PowerShell Offline 29 passed。
 
 ## PowerShell 语法
 
@@ -50,6 +50,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 ```text
 BITWebAutoLogin-v<version>-win-x64.zip
 BITWebAutoLogin-v<version>-win-x64.zip.sha256
+BITWebAutoLogin-Setup-v<version>-win-x64.exe
+BITWebAutoLogin-Setup-v<version>-win-x64.exe.sha256
 build-result.json
 ```
 
@@ -59,18 +61,18 @@ build-result.json
 
 ```powershell
 $dotnet = "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"
-$zip = '.\artifacts\release\BITWebAutoLogin-v1.3.0-win-x64.zip'
+$zip = '.\artifacts\release\BITWebAutoLogin-v1.4.0-win-x64.zip'
 
 & $dotnet run `
   --project .\manager\BITWebManager.SmokeTests\BITWebManager.SmokeTests.csproj `
   --configuration Release --no-build -- `
-  . --release-package $zip --release-version 1.3.0
+  . --release-package $zip --release-version 1.4.0
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File .\tests\Installer.Native.Tests.ps1 -PackageZip $zip
 ```
 
-当前 v1.3.0 基线：C# smoke + PackageValidator 43 passed，Native Installer 3 passed。
+当前 v1.4.0 基线：C# smoke + PackageValidator/Bootstrapper 44 passed，Native Installer 3 passed。
 
 还必须人工核验：
 
@@ -82,6 +84,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass `
 - 解压后的 Manager `--health-check` 返回相同版本；
 - Stable Manager 拒绝 `--qa-release-tag`；
 - Stable Updater 拒绝 `BITWEB_RC_QA_FAIL_HEALTH_CHECK=1`。
+- 安装 EXE 启动后，Manager 的进程路径位于独立临时目录，窗口可正常显示；关闭 Manager 后该临时目录被清理。
 
 ## 真实环境测试
 

@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BITWebManager\BITWebManager.csproj" />
     <ProjectReference Include="..\BITWebUpdater\BITWebUpdater.csproj" />
+    <ProjectReference Include="..\BITWebBootstrapper\BITWebBootstrapper.csproj" />
   </ItemGroup>
 
 </Project>

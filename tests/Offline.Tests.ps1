@@ -250,7 +250,7 @@ Test-Case 'safe preview path is explicitly gated before credential loading' {
 
 Test-Case 'settings enable redundant probes and anti-loop safeguards' {
     $settings = Get-Content -LiteralPath (Join-Path $projectRoot 'settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-    Assert-Equal ([string]$settings.Version) '1.3.0' 'settings version'
+    Assert-Equal ([string]$settings.Version) '1.4.0' 'settings version'
     $mainSource = Get-Content -LiteralPath (Join-Path $projectRoot 'AutoLogin.ps1') -Raw -Encoding UTF8
     Assert-True ($mainSource -match '\$ScriptVersion = ''1\.2\.5''') 'main script version'
     Assert-True (@($settings.ConnectivityChecks).Count -ge 2) 'redundant connectivity checks'

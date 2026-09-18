@@ -40,3 +40,16 @@ jobs:
       - name: Run offline tests
         shell: powershell
         run: powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\Offline.Tests.ps1
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build native applications
+        shell: powershell
+        run: dotnet build .\manager\BITWebManager.sln --configuration Release
+
+      - name: Run native smoke tests
+        shell: powershell
+        run: dotnet run --project .\manager\BITWebManager.SmokeTests\BITWebManager.SmokeTests.csproj --configuration Release --no-build -- .

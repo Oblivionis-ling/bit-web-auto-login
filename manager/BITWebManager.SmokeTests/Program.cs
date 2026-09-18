@@ -9,6 +9,7 @@ using BITWebManager.Services;
 using BITWebManager.ViewModels;
 using BITWebUpdater;
 using BITWebVersioning;
+using BITWebBootstrapper;
 
 var passed = 0;
 var failed = 0;
@@ -455,6 +456,22 @@ await TestAsync("validates a package and rejects Zip Slip", async () =>
     finally { Directory.Delete(work, true); }
 });
 
+await TestAsync("bootstrapper rejects an embedded Zip Slip path", () =>
+{
+    using var stream = new MemoryStream();
+    using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
+        archive.CreateEntry("BITWebAutoLogin-v1.4.0-win-x64/../escape.txt");
+    stream.Position = 0;
+    var destination = NewTestDirectory("bootstrap-slip");
+    try
+    {
+        AssertThrows<InvalidDataException>(() => EmbeddedPayload.ExtractAndValidate(stream, destination, "1.4.0"));
+        Assert(!File.Exists(Path.Combine(Path.GetDirectoryName(destination)!, "escape.txt")), "bootstrapper writes nothing outside its workspace");
+    }
+    finally { Directory.Delete(destination, true); }
+    return Task.CompletedTask;
+});
+
 await TestAsync("rejects packages containing credentials", async () =>
 {
     var work = NewTestDirectory("credential-package");
@@ -606,6 +623,11 @@ if (packageArgument >= 0 && packageArgument + 1 < args.Length)
             var payload = await validator.ValidateAndExtractAsync(archivePath, expectedReleaseVersion, workspace);
             Assert(File.Exists(Path.Combine(payload, "BITWebManager.exe")), "published manager exists");
             Assert(File.Exists(Path.Combine(payload, "BITWebUpdater.exe")), "published updater exists");
+            var bootstrapWorkspace = Path.Combine(workspace, "bootstrapper");
+            using var stream = File.OpenRead(archivePath);
+            var bootstrapPayload = EmbeddedPayload.ExtractAndValidate(
+                stream, bootstrapWorkspace, expectedReleaseVersion.ToString());
+            Assert(File.Exists(Path.Combine(bootstrapPayload, "BITWebManager.exe")), "bootstrapper extracts validated manager");
         }
         finally { Directory.Delete(workspace, true); }
     });
